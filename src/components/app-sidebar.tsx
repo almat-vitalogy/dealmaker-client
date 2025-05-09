@@ -9,31 +9,31 @@ import {
   IconFileAi,
   IconFileDescription,
   IconFileWord,
-  IconFolder,
+  // IconFolder,
   IconHelp,
   IconInnerShadowTop,
-  IconListDetails,
+  // IconListDetails,
   IconReport,
   IconSearch,
   IconSettings,
   IconUsers,
   IconDeviceMobile,
   IconPencil,
-  IconHomeStats,
+  // IconHomeStats,
   IconActivity,
 } from "@tabler/icons-react";
 
-import { NavDocuments } from "@/components/nav-documents";
+// import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
+// import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "admin",
+    email: "admin@dealmaker.com",
+    avatar: "/globe.svg",
   },
   navMain: [
     {

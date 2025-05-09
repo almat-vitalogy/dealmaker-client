@@ -1,14 +1,14 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import { ChartAreaInteractive } from "@/components/chart-area-interactive";
-import { DataTable } from "@/components/data-table";
-import { SectionCards } from "@/components/section-cards";
+// import { ChartAreaInteractive } from "@/components/chart-area-interactive";
+// import { DataTable } from "@/components/data-table";
+// import { SectionCards } from "@/components/section-cards";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { CalendarIcon, CheckCircle, Clock, PlusCircle, RefreshCcw, RefreshCw, SendIcon, XCircle } from "lucide-react";
+import { CalendarIcon, SendIcon } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";

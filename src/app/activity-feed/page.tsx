@@ -1,31 +1,31 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import { ChartAreaInteractive } from "@/components/chart-area-interactive";
-import { DataTable } from "@/components/data-table";
-import { SectionCards } from "@/components/section-cards";
+// import { ChartAreaInteractive } from "@/components/chart-area-interactive";
+// import { DataTable } from "@/components/data-table";
+// import { SectionCards } from "@/components/section-cards";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
-  CalendarIcon,
-  CheckCircle,
+  // CalendarIcon,
+  // CheckCircle,
   CheckCircle2,
-  Clock,
+  // Clock,
   MessageSquare,
   PlusCircle,
   RefreshCcw,
-  RefreshCw,
+  // RefreshCw,
   Send,
-  SendIcon,
+  // SendIcon,
   XCircle,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { DateTimePicker24hForm } from "@/components/ui/date-time-picker";
-import { BlastHistoryTable } from "@/components/ui/blast-history-table";
+// import { Button } from "@/components/ui/button";
+// import { Badge } from "@/components/ui/badge";
+// import { Input } from "@/components/ui/input";
+// import { Label } from "@/components/ui/label";
+// import { Textarea } from "@/components/ui/textarea";
+// import { DateTimePicker24hForm } from "@/components/ui/date-time-picker";
+// import { BlastHistoryTable } from "@/components/ui/blast-history-table";
 
 const activityFeed = [
   {
@@ -91,7 +91,7 @@ export default function Page() {
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {activityFeed.map((item, index) => {
+              {activityFeed.map((item) => {
                 const Icon = item.icon;
                 return (
                   <div key={item.id} className="flex items-start gap-4">
