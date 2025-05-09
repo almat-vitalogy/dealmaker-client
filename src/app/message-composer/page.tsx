@@ -26,7 +26,7 @@ export default function Page() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader left="Contacts" right="" />
+        <SiteHeader left="Message Composer" right="" />
         <div className="p-6 space-y-6">
           {/* AI Generator */}
           <Card>

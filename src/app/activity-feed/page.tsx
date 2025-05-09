@@ -84,7 +84,7 @@ export default function Page() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader left="Contacts" right="" />
+        <SiteHeader left="Activity Feed" right="" />
         <div className="p-6">
           <Card>
             <CardHeader>
