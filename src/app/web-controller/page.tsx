@@ -6,8 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { Button } from "@/components/ui/button";
 import { useSocket } from "@/lib/SocketProvider";
 import { useEffect, useRef, useState } from "react";
-import { Switch } from "@/components/ui/switch";
-import { CheckCircle, Loader2, XCircle } from "lucide-react";
+
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
+import ContactsStep from "@/components/whatsapp/ContactsStep";
+import MessageStep from "@/components/whatsapp/MessageStep";
+import ScheduleStep from "@/components/whatsapp/ScheduleStep";
+import PreviewStep from "@/components/whatsapp/PreviewStep";
+import DoneStep from "@/components/whatsapp/DoneStep";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 type ConnectionStatus = "Disconnected" | "Loading..." | "Connected";
 
@@ -84,51 +92,28 @@ export default function Page() {
     };
   }, [socket]);
 
-  // useEffect(() => {
-  //   return () => {
-  //     if (streamStatus !== "Disconnected") {
-  //       disconnect();
-  //     }
-
-  //     if (mediaSourceRef.current && mediaSourceRef.current.readyState === "open") {
-  //       mediaSourceRef.current.endOfStream();
-  //     }
-  //   };
-  // }, [disconnect, streamStatus]);
-
   useEffect(() => {
     if (isConnected && streamStatus === "Loading...") {
       setupVideoStream();
     }
   }, [isConnected, streamStatus]);
 
-  const handleToggleStream = (checked: boolean) => {
-    console.log(`checked: ${checked}`);
-    if (checked) {
-      console.log(`toggle connecting`);
-      setStreamStatus("Loading...");
-      connect();
-    } else {
-      console.log(`toggle disconnecting`);
-      disconnect();
-      if (mediaSourceRef.current && mediaSourceRef.current.readyState === "open") {
-        mediaSourceRef.current.endOfStream();
-      }
-      setStreamStatus("Disconnected");
-      if (videoRef.current) videoRef.current.src = "";
-    }
-  };
-
-  const StatusIcon = () => {
-    switch (streamStatus) {
-      case "Connected":
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case "Loading...":
-        return <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />;
-      case "Disconnected":
-        return <XCircle className="h-5 w-5 text-red-500" />;
-    }
-  };
+  const {
+    currentStep,
+    setCurrentStep,
+    totalSteps,
+    contacts,
+    newContact,
+    setNewContact,
+    message,
+    setMessage,
+    selectedContacts,
+    handleAddContact,
+    handleSelectContact,
+    handleNext,
+    handlePrevious,
+    resetForm,
+  } = useWhatsAppIntegration();
 
   return (
     <SidebarProvider
@@ -143,64 +128,6 @@ export default function Page() {
       <SidebarInset>
         <SiteHeader left="Web Controller" right="" />
         <div className="p-6 space-y-6">
-          {/* QR + Status */}
-          <div className="flex justify-between h-80">
-            {/* QR Code */}
-            <Card className="flex items-center justify-center h-full w-fit">
-              <CardContent className="flex items-center h-full flex-col gap-10">
-                <div>Scan QR</div>
-                <div className="w-52 h-52 rounded border bg-muted flex items-center justify-center">
-                  <span className="text-muted-foreground text-sm">QR</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Status & Instructions */}
-            <Card className="w-2/3 flex justify-around">
-              <CardHeader className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <StatusIcon />
-                  <span
-                    className={`
-                                font-medium 
-                                ${streamStatus === "Connected" ? "text-green-600" : ""}
-                                ${streamStatus === "Loading..." ? "text-amber-500" : ""}
-                                ${streamStatus === "Disconnected" ? "text-red-500" : ""}
-                              `}
-                  >
-                    {streamStatus}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {/* <span className="text-sm text-muted-foreground">{streamStatus === "loading..." ? ""}</span> */}
-                  <Switch
-                    checked={streamStatus !== "Disconnected"}
-                    onCheckedChange={handleToggleStream}
-                    disabled={streamStatus === "Loading..."}
-                    className="cursor-pointer"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-2 pb-4 px-6">
-                <ol className="list-decimal text-sm text-muted-foreground space-y-1 pl-4">
-                  <li>Open WhatsApp on your mobile device.</li>
-                  <li>
-                    Go to <strong>Settings</strong>.
-                  </li>
-                  <li>
-                    Select <strong>Linked Devices</strong>.
-                  </li>
-                  <li>
-                    Tap <strong>Link a Device</strong>.
-                  </li>
-                  <li>Use your phone to scan the QR code on this page.</li>
-                  <li>Wait for the connection to complete.</li>
-                  <li>Do not close this browser window while connected.</li>
-                </ol>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Stream */}
           <Card>
             <CardHeader>
@@ -211,6 +138,56 @@ export default function Page() {
                 {/* <span className="text-white text-sm">[Stream Preview Placeholder]</span> */}
                 <video ref={videoRef} controls autoPlay muted className="w-full h-full object-cover" />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent> 
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-2xl font-bold">
+                WhatsApp Integration
+              </h2>
+            </div>
+              <Carousel
+                  setApi={(api) => {
+                    api?.on('select', () => setCurrentStep(api.selectedScrollSnap()));
+                  }}
+                  opts={{ startIndex: currentStep }}
+                >
+                  <CarouselContent>
+                    <CarouselItem><ContactsStep contacts={contacts} selectedContacts={selectedContacts} newContact={newContact} setNewContact={setNewContact} handleAddContact={handleAddContact} handleSelectContact={handleSelectContact} /></CarouselItem>
+                    <CarouselItem><MessageStep message={message} setMessage={setMessage} /></CarouselItem>
+                    <CarouselItem><ScheduleStep message={message} setMessage={setMessage} /></CarouselItem>
+                    <CarouselItem><PreviewStep selectedContacts={selectedContacts} message={message} /></CarouselItem>
+                    <CarouselItem><DoneStep selectedContacts={selectedContacts} message={message} onReset={resetForm} /></CarouselItem>
+                  </CarouselContent>
+                  <div className="flex justify-between items-center mt-6">
+                    {currentStep >= 0 && currentStep < 4 && (
+                      <Button 
+                        variant="outline" 
+                        onClick={handlePrevious} 
+                        disabled={currentStep === 0}
+                        className="flex items-center"
+                      >
+                        <ArrowLeft className="mr-2" size={16} /> Previous
+                      </Button>
+                    )}
+                    
+                    {/* Step indicator in the middle */}
+                    <div className="text-sm text-muted-foreground mx-auto absolute bottom-2 right-1/2">
+                      Step {currentStep + 1} of {totalSteps}
+                    </div>
+                    
+                    {currentStep < 4 && (
+                      <Button 
+                        onClick={handleNext}
+                        className="flex items-center"
+                      >
+                        {currentStep === 3 ? 'Send Message' : 'Next'} <ArrowRight className="ml-2" size={16} />
+                      </Button>
+                    )}
+                  </div>
+                </Carousel>
             </CardContent>
           </Card>
         </div>
