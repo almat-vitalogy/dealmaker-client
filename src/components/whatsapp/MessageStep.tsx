@@ -1,62 +1,42 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useBlastStore } from "@/store/blast";
 
-interface MessageDetails {
-  theme?: string;
-  content: string;
-  scheduledTime?: string;
-  isScheduled: boolean;
-}
-
-interface MessageStepProps {
-  message: MessageDetails;
-  setMessage: (message: MessageDetails) => void;
-}
-
-const MessageStep: React.FC<MessageStepProps> = ({ message, setMessage }) => {
+const MessageStep = () => {
+  const { message, setMessage } = useBlastStore();
+  const [theme, setTheme] = useState("");
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="-mt-6">
+      <Card className="border-none shadow-none">
         <CardHeader>
           <CardTitle>AI Message Generator</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="-mt-5">
           <div className="space-y-4">
             <div>
-              <label htmlFor="theme" className="block text-sm font-medium mb-1">
+              <label htmlFor="theme" className="block text-sm font-medium mb-1 text-muted-foreground">
                 Message Theme
               </label>
-              <Input 
-                id="theme" 
-                placeholder="e.g. Birthday greeting, Promo reminder" 
-                value={message.theme || ""}
-                onChange={(e) => setMessage({...message, theme: e.target.value})}
-              />
+              <Input id="theme" placeholder="e.g. Birthday greeting, Promo reminder" value={theme} onChange={(e) => setTheme(e.target.value)} />
             </div>
-            <Button className="w-full">
-              Generate Message
-            </Button>
+            <Button className="w-full">Generate Message</Button>
           </div>
         </CardContent>
-      </Card>
-      
-      <Card>
         <CardHeader>
           <CardTitle>Message Editor</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <textarea 
-              className="w-full h-32 p-3 border rounded-md" 
+        <CardContent className="-mt-5">
+          <div className="space-y-4 max-h-[440px] overflow-y-auto">
+            <textarea
+              className="w-full h-32 p-3 border rounded-md"
               placeholder="Generated or custom message will appear here..."
-              value={message.content}
-              onChange={(e) => setMessage({...message, content: e.target.value})}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
             />
-            <div className="flex justify-end">
-              <Button variant="outline">
+            <div className="flex w-full">
+              <Button variant="outline" className="w-full">
                 Save as Template
               </Button>
             </div>

@@ -3,31 +3,32 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Button } from "@/components/ui/button";
 import { useSocket } from "@/lib/SocketProvider";
 import { useEffect, useRef, useState } from "react";
-
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
 import ContactsStep from "@/components/whatsapp/ContactsStep";
 import MessageStep from "@/components/whatsapp/MessageStep";
 import ScheduleStep from "@/components/whatsapp/ScheduleStep";
-import PreviewStep from "@/components/whatsapp/PreviewStep";
 import DoneStep from "@/components/whatsapp/DoneStep";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { Loader2, Play, Square } from "lucide-react";
+import { useBlastStore } from "@/store/blast";
 
-type ConnectionStatus = "Disconnected" | "Loading..." | "Connected";
+type ConnectionStatus = "Start Streaming" | "Loading..." | "Stop Streaming";
 
 export default function Page() {
+  const { socket, isConnected, connect, disconnect } = useSocket();
   const mediaSourceRef = useRef<MediaSource | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sourceBufferRef = useRef<SourceBuffer | null>(null);
-  const [streamStatus, setStreamStatus] = useState<ConnectionStatus>("Disconnected");
+  const [streamStatus, setStreamStatus] = useState<ConnectionStatus>("Start Streaming");
+  const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const { contacts, message, setContacts, setMessage } = useBlastStore();
 
-  const { socket, isConnected, connect, disconnect } = useSocket();
+  // const [message, setMessage] = useState("");
+  const totalSlides = 3;
 
-  // Set up the media source when the stream starts
   const setupVideoStream = () => {
     const mediaSource = new MediaSource();
     mediaSourceRef.current = mediaSource;
@@ -58,7 +59,7 @@ export default function Page() {
 
     socket.on("disconnect", () => {
       console.log("Socket disconnected");
-      setStreamStatus("Disconnected");
+      setStreamStatus("Start Streaming");
     });
 
     socket.on("video-stream", (chunk: ArrayBuffer) => {
@@ -67,7 +68,7 @@ export default function Page() {
       }
       // Once we receive the first chunk, consider the stream connected
       if (streamStatus === "Loading...") {
-        setStreamStatus("Connected");
+        setStreamStatus("Stop Streaming");
       }
     });
 
@@ -75,12 +76,12 @@ export default function Page() {
       if (mediaSourceRef.current && mediaSourceRef.current.readyState === "open") {
         mediaSourceRef.current.endOfStream();
       }
-      setStreamStatus("Disconnected");
+      setStreamStatus("Start Streaming");
     });
 
     socket.on("stream-error", (error) => {
       console.error("Stream error:", error);
-      setStreamStatus("Disconnected");
+      setStreamStatus("Start Streaming");
     });
 
     return () => {
@@ -98,22 +99,85 @@ export default function Page() {
     }
   }, [isConnected, streamStatus]);
 
-  const {
-    currentStep,
-    setCurrentStep,
-    totalSteps,
-    contacts,
-    newContact,
-    setNewContact,
-    message,
-    setMessage,
-    selectedContacts,
-    handleAddContact,
-    handleSelectContact,
-    handleNext,
-    handlePrevious,
-    resetForm,
-  } = useWhatsAppIntegration();
+  // const {
+  //   currentStep,
+  //   setCurrentStep,
+  //   totalSteps,
+  //   contacts,
+  //   newContact,
+  //   setNewContact,
+  //   message,
+  //   setMessage,
+  //   selectedContacts,
+  //   handleAddContact,
+  //   handleSelectContact,
+  //   handleNext,
+  //   handlePrevious,
+  //   resetForm,
+  // } = useWhatsAppIntegration();
+
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    const onSelect = () => {
+      setCurrentSlide(carouselApi.selectedScrollSnap());
+    };
+
+    onSelect(); // set initial
+    carouselApi.on("select", onSelect);
+
+    return () => {
+      carouselApi.off("select", onSelect);
+    };
+  }, [carouselApi]);
+
+  const StatusIcon = () => {
+    switch (streamStatus) {
+      case "Stop Streaming":
+        return <Square className="h-5 w-5 " />;
+      case "Loading...":
+        return <Loader2 className="h-5 w-5 animate-spin" />;
+      case "Start Streaming":
+        return <Play className="h-5 w-5 " />;
+    }
+  };
+
+  const handleToggleStream = () => {
+    if (streamStatus === "Start Streaming") {
+      console.log(`toggle connecting`);
+      setStreamStatus("Loading...");
+      connect();
+    } else if (streamStatus !== "Loading...") {
+      console.log(`toggle disconnecting`);
+      disconnect();
+      if (mediaSourceRef.current && mediaSourceRef.current.readyState === "open") {
+        mediaSourceRef.current.endOfStream();
+      }
+      setStreamStatus("Start Streaming");
+      if (videoRef.current) videoRef.current.src = "";
+    }
+  };
+
+  // const sendWhatsAppMessage = async () => {
+  //   const phoneList = phones
+  //     .split(",")
+  //     .map((phone) => phone.trim())
+  //     .filter((phone) => phone);
+  //   console.log(phoneList);
+
+  //   try {
+  //     setStatus("loading");
+  //     await axios.post(`${SERVER_URL}/send-message`, {
+  //       phones: phoneList,
+  //       message,
+  //     });
+  //     setStatus("success");
+  //     setMessage("");
+  //   } catch (error) {
+  //     console.error("Error sending message:", error);
+  //     setStatus("error");
+  //   }
+  // };
 
   return (
     <SidebarProvider
@@ -129,65 +193,72 @@ export default function Page() {
         <SiteHeader left="Web Controller" right="" />
         <div className="p-6 space-y-6">
           {/* Stream */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Live Stream</CardTitle>
+          <Card className="py-2">
+            <CardHeader className="flex py-2 my-0 justify-center">
+              {/* <CardTitle>Live Stream</CardTitle> */}
+              <div className="flex items-center my-0">
+                {/* <Switch
+                  checked={streamStatus !== "Start Streaming"}
+                  onCheckedChange={handleToggleStream}
+                  disabled={streamStatus === "Loading..."}
+                  className="cursor-pointer mr-10"
+                /> */}
+                {/* <StatusIcon /> */}
+                <button
+                  className={`    
+                              mr-5 font-medium rounded-lg p-2 cursor-pointer flex items-center justify-center gap-6
+                              ${streamStatus === "Stop Streaming" ? "bg-red-200" : ""}
+                              ${streamStatus === "Loading..." ? "bg-amber-200" : ""}
+                              ${streamStatus === "Start Streaming" ? "bg-green-200" : ""}
+                            `}
+                  // checked={streamStatus !== "Start Streaming"}
+                  onClick={() => handleToggleStream()}
+                  disabled={streamStatus === "Loading..."}
+                  // className="cursor-pointer mr-10"
+                >
+                  {streamStatus}
+                  <StatusIcon />
+                </button>
+              </div>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 -mt-4">
               <div className="h-fit w-full bg-black rounded-b-lg flex items-center justify-center">
-                {/* <span className="text-white text-sm">[Stream Preview Placeholder]</span> */}
                 <video ref={videoRef} controls autoPlay muted className="w-full h-full object-cover" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent> 
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-2xl font-bold">
-                WhatsApp Integration
-              </h2>
-            </div>
-              <Carousel
-                  setApi={(api) => {
-                    api?.on('select', () => setCurrentStep(api.selectedScrollSnap()));
-                  }}
-                  opts={{ startIndex: currentStep }}
-                >
-                  <CarouselContent>
-                    <CarouselItem><ContactsStep contacts={contacts} selectedContacts={selectedContacts} newContact={newContact} setNewContact={setNewContact} handleAddContact={handleAddContact} handleSelectContact={handleSelectContact} /></CarouselItem>
-                    <CarouselItem><MessageStep message={message} setMessage={setMessage} /></CarouselItem>
-                    <CarouselItem><ScheduleStep message={message} setMessage={setMessage} /></CarouselItem>
-                    <CarouselItem><PreviewStep selectedContacts={selectedContacts} message={message} /></CarouselItem>
-                    <CarouselItem><DoneStep selectedContacts={selectedContacts} message={message} onReset={resetForm} /></CarouselItem>
-                  </CarouselContent>
-                  <div className="flex justify-between items-center mt-6">
-                    {currentStep >= 0 && currentStep < 4 && (
-                      <Button 
-                        variant="outline" 
-                        onClick={handlePrevious} 
-                        disabled={currentStep === 0}
-                        className="flex items-center"
-                      >
-                        <ArrowLeft className="mr-2" size={16} /> Previous
-                      </Button>
-                    )}
-                    
-                    {/* Step indicator in the middle */}
-                    <div className="text-sm text-muted-foreground mx-auto absolute bottom-2 right-1/2">
-                      Step {currentStep + 1} of {totalSteps}
-                    </div>
-                    
-                    {currentStep < 4 && (
-                      <Button 
-                        onClick={handleNext}
-                        className="flex items-center"
-                      >
-                        {currentStep === 3 ? 'Send Message' : 'Next'} <ArrowRight className="ml-2" size={16} />
-                      </Button>
-                    )}
-                  </div>
-                </Carousel>
+          <Card className="relative p-6">
+            <CardHeader className="text-center text-lg">
+              <CardTitle>Send Message</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Carousel className="h-[700px]" setApi={setCarouselApi}>
+                <CarouselContent>
+                  <CarouselItem>
+                    <ContactsStep />
+                  </CarouselItem>
+                  <CarouselItem>
+                    <MessageStep />
+                  </CarouselItem>
+                  <CarouselItem>
+                    <ScheduleStep />
+                  </CarouselItem>
+                  {/* <CarouselItem>
+                    <PreviewStep selectedContacts={selectedContacts} message={message} />
+                  </CarouselItem> */}
+                  {/* <CarouselItem>
+                    <DoneStep selectedContacts={selectedContacts} message={message} onReset={resetForm} />
+                  </CarouselItem> */}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
+              <div className="flex justify-center mt-4 space-x-2">
+                {Array.from({ length: totalSlides }).map((_, i) => (
+                  <div key={i} className={`w-2 h-2 rounded-full ${i === currentSlide ? "bg-primary" : "bg-gray-300"} transition-all duration-300`} />
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>

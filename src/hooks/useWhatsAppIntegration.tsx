@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 
 interface Contact {
@@ -16,6 +15,16 @@ interface MessageDetails {
 export const useWhatsAppIntegration = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [contacts, setContacts] = useState<Contact[]>([
+    { name: "John Doe", phone: "+852 9123 4567" },
+    { name: "Jane Chan", phone: "+852 9876 5432" },
+    { name: "John Doe", phone: "+852 9123 4567" },
+    { name: "Jane Chan", phone: "+852 9876 5432" },
+    { name: "John Doe", phone: "+852 9123 4567" },
+    { name: "Jane Chan", phone: "+852 9876 5432" },
+    { name: "John Doe", phone: "+852 9123 4567" },
+    { name: "Jane Chan", phone: "+852 9876 5432" },
+    { name: "John Doe", phone: "+852 9123 4567" },
+    { name: "Jane Chan", phone: "+852 9876 5432" },
     { name: "John Doe", phone: "+852 9123 4567" },
     { name: "Jane Chan", phone: "+852 9876 5432" },
   ]);
@@ -64,7 +73,6 @@ export const useWhatsAppIntegration = () => {
     //   });
     //   return;
     // }
-
     // if (!message.content) {
     //   toast({
     //     title: "Error",
@@ -73,7 +81,6 @@ export const useWhatsAppIntegration = () => {
     //   });
     //   return;
     // }
-
     // if (message.isScheduled && !message.scheduledTime) {
     //   toast({
     //     title: "Error",
@@ -82,12 +89,11 @@ export const useWhatsAppIntegration = () => {
     //   });
     //   return;
     // }
-
     // // In a real app, this would send the message to the backend
     // setCurrentStep(4); // Move to the final step
     // toast({
     //   title: "Success",
-    //   description: message.isScheduled 
+    //   description: message.isScheduled
     //     ? `Message scheduled to be sent to ${selectedContacts.length} contact(s)`
     //     : `Message sent to ${selectedContacts.length} contact(s)`,
     // });
