@@ -1,3 +1,4 @@
+"use client";
 import { AppSidebar } from "@/components/app-sidebar";
 // import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 // import { DataTable } from "@/components/data-table";
@@ -17,6 +18,7 @@ import {
   // SendIcon,
   XCircle,
 } from "lucide-react";
+import axios from "axios";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { Button } from "@/components/ui/button";
@@ -26,53 +28,50 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { Textarea } from "@/components/ui/textarea";
 // import { DateTimePicker24hForm } from "@/components/ui/date-time-picker";
 // import { BlastHistoryTable } from "@/components/ui/blast-history-table";
+import React, { useEffect, useState } from "react";
 
-const activityFeed = [
-  {
-    id: 1,
-    icon: Send,
-    title: "Message Sent",
-    description: "Blast message '🎉 Birthday Promo' sent to 120 contacts.",
-    timestamp: "2 mins ago",
-  },
-  {
-    id: 2,
-    icon: PlusCircle,
-    title: "New Contact Added",
-    description: "Manually added contact: Jane Chan (+852 9876 5432).",
-    timestamp: "15 mins ago",
-  },
-  {
-    id: 3,
-    icon: RefreshCcw,
-    title: "Reconnected",
-    description: "WhatsApp session reconnected successfully.",
-    timestamp: "1 hour ago",
-  },
-  {
-    id: 4,
-    icon: MessageSquare,
-    title: "Template Saved",
-    description: "Saved new template: '💬 Follow-up Reminder'",
-    timestamp: "2 hours ago",
-  },
-  {
-    id: 5,
-    icon: CheckCircle2,
-    title: "Sync Complete",
-    description: "Google Sheet import completed without issues.",
-    timestamp: "Yesterday",
-  },
-  {
-    id: 6,
-    icon: XCircle,
-    title: "Send Failed",
-    description: "Blast message 'Promo Alert' failed for 3 contacts.",
-    timestamp: "2 days ago",
-  },
-];
+interface ActivityItem {
+  icon: string;       // e.g. "Send"
+  title: string;
+  description: string;
+  timestamp: string;
+}
 
 export default function Page() {
+  const [activityFeed, setActivityFeed] = useState<ActivityItem[]>([]);
+
+  useEffect(() => {
+    const fetch = async () => { 
+      const response = await axios.get("https://dealmaker.turoid.ai/api/activity-feed");
+      console.log("✅ Fetched Activity Feed from server:", response.data);
+
+      setActivityFeed(response.data.activities);
+    }
+
+    fetch()
+  }, [])
+
+  // Map string -> actual icon component
+  function getIconComponent(iconName: string) {
+    switch (iconName) {
+      case "Send":
+        return Send;
+      case "PlusCircle":
+        return PlusCircle;
+      case "RefreshCcw":
+        return RefreshCcw;
+      case "MessageSquare":
+        return MessageSquare;
+      case "CheckCircle2":
+        return CheckCircle2;
+      case "XCircle":
+        return XCircle;
+      default:
+        return MessageSquare; // fallback icon
+    }
+  }
+
+
   return (
     <SidebarProvider
       style={
@@ -91,10 +90,11 @@ export default function Page() {
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {activityFeed.map((item) => {
-                const Icon = item.icon;
+              {activityFeed.map((item, index) => {
+                const Icon = getIconComponent(item.icon);
+
                 return (
-                  <div key={item.id} className="flex items-start gap-4">
+                  <div key={index} className="flex items-start gap-4">
                     <div className="rounded-full bg-muted p-2">
                       <Icon className="h-5 w-5 text-muted-foreground" />
                     </div>

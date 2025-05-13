@@ -1,3 +1,4 @@
+"use client";
 import { AppSidebar } from "@/components/app-sidebar";
 // import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 // import { DataTable } from "@/components/data-table";
@@ -6,25 +7,59 @@ import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { CheckCircle, Clock, RefreshCcw, RefreshCw, XCircle } from "lucide-react";
 
-// import data from "./data.json";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const recentBlasts = [
-  { title: "New Year Greetings", status: "Completed", sent: 148, failed: 2, date: "Jan 1, 2025" },
-  { title: "Policy Reminder", status: "Completed", sent: 74, failed: 1, date: "Jan 10, 2025" },
-  { title: "Valentine Promo", status: "Scheduled", sent: 0, failed: 0, date: "Feb 1, 2025" },
-  { title: "New Year Greetings", status: "Completed", sent: 148, failed: 2, date: "Jan 1, 2025" },
-];
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-const recentActivity = [
-  { icon: <CheckCircle className="text-green-500 w-4 h-4" />, text: "Birthday greetings sent to 50 clients", time: "10 minutes ago" },
-  { icon: <RefreshCcw className="text-blue-500 w-4 h-4" />, text: 'Contact list "VIP Clients" updated', time: "1 hour ago" },
-  { icon: <XCircle className="text-red-500 w-4 h-4" />, text: "WhatsApp session expired", time: "3 hours ago" },
-  { icon: <Clock className="text-yellow-500 w-4 h-4" />, text: "Scheduled renewal reminders for tomorrow", time: "5 hours ago" },
-];
+interface RecentBlast {
+  title: string;
+  status: string;
+  sent: number;
+  failed: number;
+  date: string;
+}
+
+interface RecentActivity {
+  icon: 'CheckCircle' | 'RefreshCcw' | 'XCircle' | 'Clock';
+  text: string;
+  time: string;
+}
+
+
+interface DashboardData {
+  totalContacts: number;
+  messagesSent: number;
+  scheduledBlasts: number;
+  successRate: number;
+  recentBlasts: RecentBlast[];
+  recentActivity: RecentActivity[];
+}
 
 export default function Page() {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const response = await axios.get("https://dealmaker.turoid.ai/api/dashboard");
+        console.log("✅ Dashboard data fetched:", response.data);
+        setDashboardData(response.data);
+      } catch (error) {
+        console.error("❌ Error fetching Dashboard data:", error);
+      }
+    };
+    fetchDashboard();
+  }, []);
+
+  const iconMap = {
+    CheckCircle: <CheckCircle className="text-green-500 w-4 h-4" />,
+    RefreshCcw: <RefreshCcw className="text-blue-500 w-4 h-4" />,
+    XCircle: <XCircle className="text-red-500 w-4 h-4" />,
+    Clock: <Clock className="text-yellow-500 w-4 h-4" />,
+  };
+
   return (
     <SidebarProvider
       style={
@@ -52,11 +87,11 @@ export default function Page() {
                       <RefreshCw size={14} className="mr-1" />
                     </Button>
                   </CardHeader>
-                  <CardContent className={`flex flex-col gap-2 max-h-40 overflow-auto`}>
-                    {recentBlasts.map((blast, i) => (
-                      <div key={i} className="flex justify-between border-b">
+                  <CardContent className="max-h-40 overflow-auto">
+                    {dashboardData?.recentBlasts.map((blast, i) => (
+                      <div key={i} className="flex justify-between border-b py-1">
                         <span>{blast.title}</span>
-                        <span className="text-gray-500">
+                        <span className="text-muted-foreground">
                           {blast.status} • {blast.sent}/{blast.failed}
                         </span>
                       </div>
@@ -73,11 +108,11 @@ export default function Page() {
                     </Button>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {recentActivity.map((activity, i) => (
-                      <div key={i} className="flex items-center text-sm space-x-2">
-                        {activity.icon}
+                    {dashboardData?.recentActivity.map((activity, i) => (
+                      <div key={i} className="flex items-center space-x-2">
+                        {iconMap[activity.icon]}
                         <span>{activity.text}</span>
-                        <span className="text-muted-foreground ml-auto text-xs">{activity.time}</span>
+                        <span className="ml-auto text-xs text-muted-foreground">{activity.time}</span>
                       </div>
                     ))}
                   </CardContent>

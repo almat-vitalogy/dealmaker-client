@@ -1,3 +1,4 @@
+"use client";
 import { AppSidebar } from "@/components/app-sidebar";
 // import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 // import { DataTable } from "@/components/data-table";
@@ -14,42 +15,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { Textarea } from "@/components/ui/textarea";
 // import { DateTimePicker24hForm } from "@/components/ui/date-time-picker";
 import { BlastHistoryTable } from "@/components/ui/blast-history-table";
-// export const columns = [
-//   { accessorKey: "title", header: "Title" },
-//   { accessorKey: "sent", header: "Sent" },
-//   { accessorKey: "delivered", header: "Delivered" },
-//   { accessorKey: "failed", header: "Failed" },
-//   { accessorKey: "date", header: "Date" },
-// ];
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-// export const data = [
-//   {
-//     title: "🎉 Birthday Promo",
-//     sent: 120,
-//     delivered: 115,
-//     failed: 5,
-//     date: "2025-04-29 15:00",
-//   },
-//   {
-//     title: "💬 Follow-up Message",
-//     sent: 98,
-//     delivered: 97,
-//     failed: 1,
-//     date: "2025-04-28 18:30",
-//   },
-// ];
+interface BlastItem {
+  title: string;
+  sent: number;
+  delivered: number;
+  failed: number;
+  date: string;
+}
 
-// const converted = data.map((item, index) => ({
-//   id: index,
-//   header: item.title,
-//   type: "Blast",
-//   status: "Done",
-//   target: item.sent.toString(),
-//   limit: "N/A",
-//   reviewer: "System",
-// }));
 
 export default function Page() {
+  const [blasts, setBlasts] = useState<BlastItem[]>([]);
+
+  useEffect(() => {
+    const fetchBlasts = async () => {
+      try {
+        const response = await axios.get("https://dealmaker.turoid.ai/api/blast-dashboard");
+        console.log("✅ Fetched Blast Dashboard data:", response.data);
+        setBlasts(response.data.blasts);
+      } catch (error) {
+        console.error("❌ Error fetching Blast Dashboard data:", error);
+      }
+    };
+    fetchBlasts();
+  }, []);
+  
   return (
     <SidebarProvider
       style={
@@ -74,7 +67,10 @@ export default function Page() {
                     <CardTitle>Blast History</CardTitle>
                   </CardHeader>
                   <CardContent className="overflow-x-auto">
-                    {/* <DataTable data={converted} /> */}
+                    {/* 
+                      We'll pass blasts data into your <BlastHistoryTable> if it accepts a "data" prop.
+                      Adjust as needed for your actual table component’s props. 
+                    */}
                     <BlastHistoryTable></BlastHistoryTable>
                   </CardContent>
                 </Card>
