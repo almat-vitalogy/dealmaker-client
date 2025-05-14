@@ -8,6 +8,7 @@ import { useBlastStore } from "@/store/blast";
 import { useSocket } from "@/lib/SocketProvider";
 import axios from "axios";
 const SERVER_URL = "https://dealmaker.turoid.ai";
+import { DateTimePicker24hForm } from "../ui/date-time-picker";
 
 const ScheduleStep = () => {
   const { contacts, message, setMessage, setContacts } = useBlastStore();
@@ -71,19 +72,6 @@ const ScheduleStep = () => {
                 {message || <span className="text-muted-foreground">No message content</span>}
               </div>
             </div>
-
-            {/* <div>
-              <h3 className="text-muted-foreground text-sm font-medium mb-2">Send Options</h3>
-              <div className="bg-muted p-3 rounded-md">
-                {message.isScheduled ? (
-                  <div>
-                    <span className="font-medium">Scheduled for:</span> {message.scheduledTime}
-                  </div>
-                ) : (
-                  <div className="font-medium">Send immediately</div>
-                )}
-              </div>
-            </div> */}
           </div>
         </CardContent>
 
@@ -92,14 +80,13 @@ const ScheduleStep = () => {
         </CardHeader>
         <CardContent className="-mt-5">
           <div className="space-y-4">
-            {/* <Button className="w-full" variant={"default"}>
-              <Send className="mr-2" size={16} />
-              Send Now
-            </Button> */}
             <Dialog>
               <DialogTrigger asChild>
                 <Button className="w-full" variant={"default"}>
-                  <Send className="mr-2" size={16} />
+                  {!status && <Send className="mr-2" size={16} />}
+                  {status === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
+                  {status === "success" && <CheckCircle className="mr-2" size={16} />}
+                  {status === "error" && <XCircle className="mr-2" size={16} />}
                   Send Now
                 </Button>
               </DialogTrigger>
@@ -115,11 +102,7 @@ const ScheduleStep = () => {
                     }`}
                     disabled={status === "loading" || !contacts || !message}
                   >
-                    {status === "loading" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {status === "loading" ? "Sending..." : "Send Message"}
-
-                    {status === "success" && <CheckCircle className="ml-3 h-6 w-6 text-teal-600" />}
-                    {status === "error" && <XCircle className="ml-3 h-6 w-6 text-red-500" />}
                   </DialogClose>
                   <DialogClose className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100 transition w-1/2">
                     Cancel
@@ -128,8 +111,7 @@ const ScheduleStep = () => {
               </DialogContent>
             </Dialog>
             <Button className="w-full" variant={"outline"}>
-              <Calendar className="mr-2" size={16} />
-              Schedule Send
+              <DateTimePicker24hForm></DateTimePicker24hForm>
             </Button>
           </div>
         </CardContent>

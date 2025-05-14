@@ -44,7 +44,6 @@ export default function Page() {
 
       sourceBuffer.mode = "segments";
 
-      // Start the stream
       socket?.emit("start-stream", { url: "https://web.whatsapp.com/" });
     });
   };
@@ -98,23 +97,6 @@ export default function Page() {
       setupVideoStream();
     }
   }, [isConnected, streamStatus]);
-
-  // const {
-  //   currentStep,
-  //   setCurrentStep,
-  //   totalSteps,
-  //   contacts,
-  //   newContact,
-  //   setNewContact,
-  //   message,
-  //   setMessage,
-  //   selectedContacts,
-  //   handleAddContact,
-  //   handleSelectContact,
-  //   handleNext,
-  //   handlePrevious,
-  //   resetForm,
-  // } = useWhatsAppIntegration();
 
   useEffect(() => {
     if (!carouselApi) return;

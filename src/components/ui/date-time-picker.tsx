@@ -51,20 +51,24 @@ export function DateTimePicker24hForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
         <FormField
           control={form.control}
           name="time"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Enter your date & time (24h)</FormLabel>
+            <FormItem className="flex flex-col w-full">
+              {/* <FormLabel>Enter your date & time (24h)</FormLabel> */}
               <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                <PopoverTrigger asChild className="w-full">
+                  <FormControl className="w-full">
+                    {/* <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                       {field.value ? format(field.value, "MM/dd/yyyy HH:mm") : <span>MM/DD/YYYY HH:mm</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
+                    </Button> */}
+                    <div className="flex items-center justify-center w-full">
+                      <CalendarIcon className="mr-2" size={16} />
+                      Schedule Send
+                    </div>
                   </FormControl>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -109,7 +113,7 @@ export function DateTimePicker24hForm() {
                   </div>
                 </PopoverContent>
               </Popover>
-              <FormDescription>Please select your preferred date and time.</FormDescription>
+              {/* <FormDescription>Please select your preferred date and time.</FormDescription> */}
               <FormMessage />
             </FormItem>
           )}
