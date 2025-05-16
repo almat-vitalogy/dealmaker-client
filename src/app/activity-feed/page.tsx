@@ -36,7 +36,7 @@ export default function Page() {
   useEffect(() => {
     const fetchActivityFeed = async () => {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/blast-messages`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/activity-feed`);
         console.log("✅ Fetched Blast Messages for Activity Feed:", response.data);
         setActivityFeed(response.data);
       } catch (error) {
