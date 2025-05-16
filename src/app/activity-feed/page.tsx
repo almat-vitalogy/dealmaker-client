@@ -30,7 +30,6 @@ interface BlastMessage {
     timestamp: string;
   };
 }
-
 export default function Page() {
   const [activityFeed, setActivityFeed] = useState<BlastMessage[]>([]);
 
@@ -71,16 +70,21 @@ export default function Page() {
 
   return (
     <SidebarProvider
-      style={{
-        "--sidebar-width": "calc(var(--spacing) * 72)",
-        "--header-height": "calc(var(--spacing) * 12)",
-      } as React.CSSProperties}
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader left="Activity Feed" right="" />
         <div className="p-6">
           <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+            </CardHeader>
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
@@ -109,3 +113,4 @@ export default function Page() {
     </SidebarProvider>
   );
 }
+

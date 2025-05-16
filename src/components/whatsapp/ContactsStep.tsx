@@ -6,7 +6,7 @@ import { Check } from "lucide-react";
 import { useBlastStore } from "@/store/blast";
 
 const ContactsStep = () => {
-  const { contacts, selectContact, addContact } = useBlastStore();
+  const { contacts, selectContact, addContact, selectedContacts } = useBlastStore();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   return (
@@ -16,32 +16,38 @@ const ContactsStep = () => {
           <CardTitle>Import Contacts</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
-          <p className="text-sm text-muted-foreground mb-4">Upload a CSV, Excel, or Google Sheets file to import contacts.</p>
-          <Button variant="outline" className="w-full">
-            Upload File
-          </Button>
+          <Button className="w-full">Upload CSV, Excel, or Google Sheets</Button>
         </CardContent>
+        <div className="mb-5"></div>
         <CardHeader>
           <CardTitle>Add Contact Manually</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-6 text-muted-foreground">
+            <div className="grid grid-cols-2 gap-6">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-1">
-                  Name
-                </label>
-                <Input id="name" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} />
+                <Input className="text-black" id="name" placeholder="Name (John Doe)" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium mb-1">
-                  Phone Number
-                </label>
-                <Input id="phone" placeholder="+852 9123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <Input
+                  className="text-black"
+                  id="phone"
+                  placeholder="Phone Number (85291234567)"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
               </div>
             </div>
-            <Button onClick={() => addContact(name, phone)} className="w-full">
-              <Check className="mr-2" size={16} />
+
+            <Button
+              onClick={() => {
+                addContact(name, phone);
+                setName("");
+                setPhone("");
+              }}
+              className="w-full"
+            >
+              {/* <Check className="mr-2" size={16} /> */}
               Add Contact
             </Button>
           </div>
@@ -96,8 +102,7 @@ const ContactsStep = () => {
                   <input
                     type="checkbox"
                     id={`contact-${index}`}
-                    // checked={selectedContacts.some((c) => c.phone === contact.phone)}
-                    checked={contact.selected}
+                    checked={selectedContacts.some((c) => c === contact.phone)}
                     onChange={() => selectContact(contact.phone)}
                     className="mr-3 h-4 w-4"
                   />

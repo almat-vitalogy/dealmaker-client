@@ -3,10 +3,6 @@
 import { createContext, useContext, useRef, useState } from "react";
 import io, { Socket } from "socket.io-client";
 
-// const SERVER_URL = "http://localhost:5001/";
-// const SERVER_URL = "https://api.turoid.ai/blast-server";
-const SERVER_URL = "https://dealmaker.turoid.ai/";
-
 type SocketContextType = {
   socket: Socket | null;
   isConnected: boolean;
@@ -34,7 +30,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     console.log("Creating new socket connection");
-    const socket = io(SERVER_URL);
+    const socket = io(process.env.NEXT_PUBLIC_API_URL);
     socketRef.current = socket;
 
     socket.on("connect", () => {

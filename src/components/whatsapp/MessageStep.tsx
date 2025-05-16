@@ -16,14 +16,18 @@ const MessageStep = () => {
         <CardContent className="-mt-5">
           <div className="space-y-4">
             <div>
-              <label htmlFor="theme" className="block text-sm font-medium mb-1 text-muted-foreground">
-                Message Theme
-              </label>
-              <Input id="theme" placeholder="e.g. Birthday greeting, Promo reminder" value={theme} onChange={(e) => setTheme(e.target.value)} />
+              <label htmlFor="theme" className="block text-sm font-medium mb-1 text-muted-foreground"></label>
+              <Input
+                id="theme"
+                placeholder="Message Theme (Birthday greeting, Promo reminder)"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+              />
             </div>
             <Button className="w-full">Generate Message</Button>
           </div>
         </CardContent>
+        <div className="mb-5"></div>
         <CardHeader>
           <CardTitle>Message Editor</CardTitle>
         </CardHeader>
@@ -36,9 +40,7 @@ const MessageStep = () => {
               onChange={(e) => setMessage(e.target.value)}
             />
             <div className="flex w-full">
-              <Button variant="outline" className="w-full">
-                Save as Template
-              </Button>
+              <Button className="w-full">Save as Template</Button>
             </div>
           </div>
         </CardContent>
