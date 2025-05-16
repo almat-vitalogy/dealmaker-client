@@ -15,7 +15,9 @@ interface BlastState {
   qrCodeUrl: string;
   connectionStatus: "Connect" | "Loading..." | "Disconnect";
   messageStatus: "success" | "loading" | "error" | "";
+  contactStatus: "success" | "loading" | "error" | "";
 
+  setContactStatus: (status: "success" | "loading" | "error" | "") => void;
   setContacts: (contacts: Contact[]) => void;
   addContact: (name: string, phone: string) => void;
   selectContact: (phone: string) => void;
@@ -25,6 +27,7 @@ interface BlastState {
   connectUser: () => Promise<boolean | undefined>;
   disconnectUser: () => Promise<boolean | undefined>;
   sendMessage: () => Promise<boolean | undefined>;
+  scrapeContacts: () => Promise<void>;
   clearStorage: () => void;
 }
 
@@ -38,7 +41,9 @@ export const useBlastStore = create<BlastState>()(
       qrCodeUrl: "",
       connectionStatus: "Connect",
       messageStatus: "",
+      contactStatus: "",
 
+      setContactStatus: (status) => set({ contactStatus: status }),
       setContacts: (contacts) => set({ contacts }),
       addContact: (name, phone) =>
         set((state) => ({
@@ -129,13 +134,52 @@ export const useBlastStore = create<BlastState>()(
           set({
             message: "",
             selectedContacts: [],
+            messageStatus: "success",
           });
-          set({ messageStatus: "success" });
+
+          // Clear status after 15 seconds
+          setTimeout(() => {
+            set({ messageStatus: "" });
+          }, 15000);
+
           return true;
         } catch (error) {
           set({ messageStatus: "error" });
           console.error("❌ sendMessage error:", error);
           return false;
+        }
+      },
+      scrapeContacts: async () => {
+        set({ contactStatus: "loading" });
+        const { userId, contacts: existingContacts } = get();
+        if (!userId) {
+          console.warn("❗ Cannot scrape contacts — no userId");
+          return;
+        }
+        try {
+          const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scrape-contacts`, {
+            userId,
+          });
+
+          const phoneNumbers: string[] = response.data.phoneNumbers || [];
+
+          // Filter out duplicates based on phone number
+          const existingPhones = new Set(existingContacts.map((c) => c.phone));
+          const newContacts = phoneNumbers.filter((number) => !existingPhones.has(number)).map((number) => ({ name: number, phone: number }));
+
+          const combinedContacts = [...existingContacts, ...newContacts];
+
+          set({ contacts: combinedContacts, contactStatus: "success" });
+
+          console.log(`✅ Added ${newContacts.length} new contacts (Total: ${combinedContacts.length})`);
+
+          // Reset status after 15 seconds
+          setTimeout(() => {
+            set({ contactStatus: "" });
+          }, 15000);
+        } catch (error) {
+          set({ contactStatus: "error" });
+          console.error("❌ scrapeContacts error:", error);
         }
       },
       clearStorage: () =>

@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Check } from "lucide-react";
+import { CheckCircle, Loader2, Send, XCircle } from "lucide-react";
 import { useBlastStore } from "@/store/blast";
 
 const ContactsStep = () => {
-  const { contacts, selectContact, addContact, selectedContacts } = useBlastStore();
+  const { contacts, selectContact, addContact, selectedContacts, scrapeContacts, contactStatus } = useBlastStore();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   return (
@@ -18,7 +18,20 @@ const ContactsStep = () => {
         <CardContent className="-mt-5">
           <Button className="w-full">Upload CSV, Excel, or Google Sheets</Button>
         </CardContent>
-        <div className="mb-5"></div>
+        <div className=""></div>
+        <CardHeader>
+          <CardTitle>Scrape Contacts</CardTitle>
+        </CardHeader>
+        <CardContent className="-mt-5">
+          <Button className="w-full" onClick={scrapeContacts}>
+            {!contactStatus && <Send className="mr-2" size={16} />}
+            {contactStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
+            {contactStatus === "success" && <CheckCircle className="mr-2" size={16} />}
+            {contactStatus === "error" && <XCircle className="mr-2" size={16} />}
+            {contactStatus === "loading" ? "Scraping..." : contactStatus === "success" ? "Scraped" : "Scrape contacts from whatsapp (connect first)"}
+          </Button>
+        </CardContent>
+        <div className=""></div>
         <CardHeader>
           <CardTitle>Add Contact Manually</CardTitle>
         </CardHeader>
@@ -54,48 +67,12 @@ const ContactsStep = () => {
         </CardContent>
       </Card>
 
-      {/* <Card>
-          <CardHeader>
-            <CardTitle>Add Contact Manually</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-1">
-                  Name
-                </label>
-                <Input
-                  id="name"
-                  placeholder="John Doe"
-                  value={newContact.name}
-                  onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium mb-1">
-                  Phone Number
-                </label>
-                <Input
-                  id="phone"
-                  placeholder="+852 9123 4567"
-                  value={newContact.phone}
-                  onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
-                />
-              </div>
-              <Button onClick={handleAddContact} className="w-full">
-                <Check className="mr-2" size={16} />
-                Add Contact
-              </Button>
-            </div>
-          </CardContent>
-        </Card> */}
-
       <Card className="border-none shadow-none">
         <CardHeader>
           <CardTitle>Contact List</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3 max-h-[300px] overflow-y-auto">
+          <div className="space-y-3 max-h-[250px] overflow-y-auto">
             {contacts.map((contact, index) => (
               <div key={index} className="flex items-center justify-between border-b pb-2">
                 <div className="flex items-center">

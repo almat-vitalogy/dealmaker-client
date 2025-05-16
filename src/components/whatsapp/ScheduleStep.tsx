@@ -37,7 +37,7 @@ const ScheduleStep = () => {
             </div>
           </div>
         </CardContent>
-
+        <div className=""></div>
         <CardHeader>
           <CardTitle>Send Options</CardTitle>
         </CardHeader>
@@ -50,7 +50,7 @@ const ScheduleStep = () => {
                   {messageStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
                   {messageStatus === "success" && <CheckCircle className="mr-2" size={16} />}
                   {messageStatus === "error" && <XCircle className="mr-2" size={16} />}
-                  Send Now
+                  {messageStatus === "loading" ? "Sending..." : messageStatus === "success" ? "Sent" : "Send Message"}
                 </Button>
               </DialogTrigger>
               <DialogContent className="w-96 flex flex-col items-center">
@@ -64,7 +64,7 @@ const ScheduleStep = () => {
                     }`}
                     disabled={messageStatus === "loading" || !contacts || !message}
                   >
-                    {messageStatus === "loading" ? "Sending..." : "Send Message"}
+                    Send Now
                   </DialogClose>
                   <DialogClose className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100 transition w-1/2">
                     Cancel

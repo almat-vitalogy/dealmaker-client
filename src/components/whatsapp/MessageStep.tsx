@@ -7,9 +7,22 @@ import { useBlastStore } from "@/store/blast";
 const MessageStep = () => {
   const { message, setMessage } = useBlastStore();
   const [theme, setTheme] = useState("");
+  const [title, setTitle] = useState("");
   return (
     <div className="-mt-6">
       <Card className="border-none shadow-none">
+        <CardHeader>
+          <CardTitle>Title</CardTitle>
+        </CardHeader>
+        <CardContent className="-mt-5">
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium mb-1 text-muted-foreground"></label>
+              <Input id="title" placeholder="Give a title to this blast" value={title} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+          </div>
+        </CardContent>
+
         <CardHeader>
           <CardTitle>AI Message Generator</CardTitle>
         </CardHeader>
@@ -27,7 +40,8 @@ const MessageStep = () => {
             <Button className="w-full">Generate Message</Button>
           </div>
         </CardContent>
-        <div className="mb-5"></div>
+
+        {/* <div className="mb-5"></div> */}
         <CardHeader>
           <CardTitle>Message Editor</CardTitle>
         </CardHeader>
@@ -40,7 +54,7 @@ const MessageStep = () => {
               onChange={(e) => setMessage(e.target.value)}
             />
             <div className="flex w-full">
-              <Button className="w-full">Save as Template</Button>
+              <Button className="w-full">Save Blast</Button>
             </div>
           </div>
         </CardContent>
