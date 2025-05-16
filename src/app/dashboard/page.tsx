@@ -33,8 +33,8 @@ interface DashboardData {
   messagesSent: number;
   scheduledBlasts: number;
   successRate: number;
-  recentBlasts: RecentBlast[];
-  recentActivity: RecentActivity[];
+  recentBlast: RecentBlast; // <-- single object
+  recentActivity: RecentActivity;
 }
 
 export default function Page() {
@@ -88,14 +88,14 @@ export default function Page() {
                     </Button>
                   </CardHeader>
                   <CardContent className="max-h-40 overflow-auto">
-                    {dashboardData?.recentBlasts.map((blast, i) => (
-                      <div key={i} className="flex justify-between border-b py-1">
-                        <span>{blast.title}</span>
+                    {dashboardData?.recentBlast && (
+                      <div className="flex justify-between border-b py-1">
+                        <span>{dashboardData.recentBlast.title}</span>
                         <span className="text-muted-foreground">
-                          {blast.status} • {blast.sent}/{blast.failed}
+                          {dashboardData.recentBlast.status} • {dashboardData.recentBlast.sent}/{dashboardData.recentBlast.failed}
                         </span>
                       </div>
-                    ))}
+                    )}
                   </CardContent>
                 </Card>
 

@@ -18,6 +18,7 @@ import { BlastHistoryTable } from "@/components/ui/blast-history-table";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
+
 interface BlastItem {
   title: string;
   sent: number;
@@ -25,7 +26,6 @@ interface BlastItem {
   failed: number;
   date: string;
 }
-
 
 export default function Page() {
   const [blasts, setBlasts] = useState<BlastItem[]>([]);
@@ -35,7 +35,7 @@ export default function Page() {
       try {
         const response = await axios.get("https://dealmaker.turoid.ai/api/blast-dashboard");
         console.log("✅ Fetched Blast Dashboard data:", response.data);
-        setBlasts(response.data.blasts);
+        setBlasts(response.data);
       } catch (error) {
         console.error("❌ Error fetching Blast Dashboard data:", error);
       }
@@ -61,17 +61,12 @@ export default function Page() {
               <SectionCards />
 
               <div className="p-6 space-y-6">
-                {/* Blast History Table */}
                 <Card>
                   <CardHeader>
                     <CardTitle>Blast History</CardTitle>
                   </CardHeader>
                   <CardContent className="overflow-x-auto">
-                    {/* 
-                      We'll pass blasts data into your <BlastHistoryTable> if it accepts a "data" prop.
-                      Adjust as needed for your actual table component’s props. 
-                    */}
-                    <BlastHistoryTable></BlastHistoryTable>
+                    <BlastHistoryTable data={blasts} />
                   </CardContent>
                 </Card>
               </div>
