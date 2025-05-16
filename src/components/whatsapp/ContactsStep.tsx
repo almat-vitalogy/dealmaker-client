@@ -6,7 +6,7 @@ import { Check } from "lucide-react";
 import { useBlastStore } from "@/store/blast";
 
 const ContactsStep = () => {
-  const { contacts, selectContact, addContact } = useBlastStore();
+  const { contacts, selectContact, addContact, selectedContacts } = useBlastStore();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   return (
@@ -31,16 +31,23 @@ const ContactsStep = () => {
                 <label htmlFor="name" className="block text-sm font-medium mb-1">
                   Name
                 </label>
-                <Input id="name" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} />
+                <Input className="text-black" id="name" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div>
                 <label htmlFor="phone" className="block text-sm font-medium mb-1">
                   Phone Number
                 </label>
-                <Input id="phone" placeholder="+852 9123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <Input className="text-black" id="phone" placeholder="85291234567" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
             </div>
-            <Button onClick={() => addContact(name, phone)} className="w-full">
+            <Button
+              onClick={() => {
+                addContact(name, phone);
+                setName("");
+                setPhone("");
+              }}
+              className="w-full"
+            >
               <Check className="mr-2" size={16} />
               Add Contact
             </Button>
@@ -96,8 +103,7 @@ const ContactsStep = () => {
                   <input
                     type="checkbox"
                     id={`contact-${index}`}
-                    // checked={selectedContacts.some((c) => c.phone === contact.phone)}
-                    checked={contact.selected}
+                    checked={selectedContacts.some((c) => c === contact.phone)}
                     onChange={() => selectContact(contact.phone)}
                     className="mr-3 h-4 w-4"
                   />

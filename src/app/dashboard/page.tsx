@@ -22,11 +22,10 @@ interface RecentBlast {
 }
 
 interface RecentActivity {
-  icon: 'CheckCircle' | 'RefreshCcw' | 'XCircle' | 'Clock';
+  icon: "CheckCircle" | "RefreshCcw" | "XCircle" | "Clock";
   text: string;
   time: string;
 }
-
 
 interface DashboardData {
   totalContacts: number;
@@ -43,7 +42,7 @@ export default function Page() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await axios.get("https://dealmaker.turoid.ai/api/dashboard");
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`);
         console.log("✅ Dashboard data fetched:", response.data);
         setDashboardData(response.data);
       } catch (error) {

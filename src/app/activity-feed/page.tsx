@@ -37,48 +37,58 @@ interface ActivityItem {
   description: string;
   timestamp: string;
 }
-
 export default function Page() {
   const [activityFeed, setActivityFeed] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
-    const fetch = async () => { 
-      const response = await axios.get("https://dealmaker.turoid.ai/api/activity-feed");
+    const fetch = async () => {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/activity-feed`);
       console.log("✅ Fetched Activity Feed from server:", response.data);
 
       setActivityFeed(response.data);
-    }
+    };
 
-    fetch()
-  }, [])
+    fetch();
+  }, []);
 
   function getIconComponent(iconName: string) {
     switch (iconName) {
-      case "Send": return Send;
-      case "PlusCircle": return PlusCircle;
-      case "RefreshCcw": return RefreshCcw;
-      case "MessageSquare": return MessageSquare;
-      case "CheckCircle2": return CheckCircle2;
-      case "XCircle": return XCircle;
-      default: return MessageSquare;
+      case "Send":
+        return Send;
+      case "PlusCircle":
+        return PlusCircle;
+      case "RefreshCcw":
+        return RefreshCcw;
+      case "MessageSquare":
+        return MessageSquare;
+      case "CheckCircle2":
+        return CheckCircle2;
+      case "XCircle":
+        return XCircle;
+      default:
+        return MessageSquare;
     }
   }
-  
+
   return (
     <SidebarProvider
-      style={{
-        "--sidebar-width": "calc(var(--spacing) * 72)",
-        "--header-height": "calc(var(--spacing) * 12)",
-      } as React.CSSProperties}
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader left="Activity Feed" right="" />
         <div className="p-6">
           <Card>
-            <CardHeader><CardTitle>Recent Activity</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+            </CardHeader>
             <CardContent className="space-y-6">
-              {activityFeed.map(item => {
+              {activityFeed.map((item) => {
                 const Icon = getIconComponent(item.icon);
                 return (
                   <div key={item._id} className="flex items-start gap-4">

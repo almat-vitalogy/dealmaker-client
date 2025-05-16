@@ -33,7 +33,7 @@ export default function Page() {
   useEffect(() => {
     const fetchBlasts = async () => {
       try {
-        const response = await axios.get("https://dealmaker.turoid.ai/api/blast-dashboard");
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/blast-dashboard`);
         console.log("✅ Fetched Blast Dashboard data:", response.data);
         setBlasts(response.data);
       } catch (error) {
@@ -42,7 +42,7 @@ export default function Page() {
     };
     fetchBlasts();
   }, []);
-  
+
   return (
     <SidebarProvider
       style={
