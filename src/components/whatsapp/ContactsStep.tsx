@@ -9,6 +9,7 @@ const ContactsStep = () => {
   const { contacts, selectContact, addContact, selectedContacts, scrapeContacts, contactStatus } = useBlastStore();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+
   return (
     <div className="-mt-6">
       <Card className="w-full border-none shadow-none">
