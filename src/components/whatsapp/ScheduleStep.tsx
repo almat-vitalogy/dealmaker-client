@@ -11,13 +11,11 @@ const ScheduleStep = () => {
   return (
     <div className="-mt-6">
       <Card className="border-none shadow-none">
-        <CardHeader>
-          <CardTitle>Preview Message</CardTitle>
-        </CardHeader>
+        <CardHeader>{/* <CardTitle>Preview Message</CardTitle> */}</CardHeader>
         <CardContent className="-mt-5">
           <div className="space-y-6">
             <div>
-              <h3 className="text-muted-foreground text-sm font-medium mb-2">Recipients ({selectedContacts.length})</h3>
+              <CardTitle className="mb-2">Recipients ({selectedContacts.length})</CardTitle>
               <div className="bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
                 {selectedContacts.length != 0 &&
                   selectedContacts.map((phone, index) => {
@@ -32,7 +30,7 @@ const ScheduleStep = () => {
             </div>
 
             <div>
-              <h3 className="text-muted-foreground text-sm font-medium mb-2">Message Content</h3>
+              <CardTitle className="mb-2">Message Content</CardTitle>
               <div className="bg-muted p-3 rounded-md max-h-[350px] overflow-auto">
                 {message || <span className="text-muted-foreground">No message content</span>}
               </div>
@@ -74,7 +72,7 @@ const ScheduleStep = () => {
                 </div>
               </DialogContent>
             </Dialog>
-            <Button className="w-full" variant={"outline"}>
+            <Button className="w-full">
               <DateTimePicker24hForm></DateTimePicker24hForm>
             </Button>
           </div>
