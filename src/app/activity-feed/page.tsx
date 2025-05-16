@@ -36,7 +36,7 @@ export default function Page() {
   useEffect(() => {
     const fetchActivityFeed = async () => {
       try {
-        const response = await axios.get("https://dealmaker.turoid.ai/api/blast-messages");
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/blast-messages`);
         console.log("✅ Fetched Blast Messages for Activity Feed:", response.data);
         setActivityFeed(response.data);
       } catch (error) {
@@ -82,9 +82,6 @@ export default function Page() {
         <SiteHeader left="Activity Feed" right="" />
         <div className="p-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
