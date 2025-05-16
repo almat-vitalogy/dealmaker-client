@@ -6,9 +6,11 @@ import { Check } from "lucide-react";
 import { useBlastStore } from "@/store/blast";
 
 const ContactsStep = () => {
+  
   const { contacts, selectContact, addContact, selectedContacts } = useBlastStore();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  
   return (
     <div className="-mt-6">
       <Card className="w-full border-none shadow-none">
