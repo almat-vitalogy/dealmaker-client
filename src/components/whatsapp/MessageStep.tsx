@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useBlastStore } from "@/store/blast";
+import { Send, Loader2, CheckCircle, XCircle } from "lucide-react";
 
 const MessageStep = () => {
-  const { message, setMessage } = useBlastStore();
+  const { message, setMessage, composeMessage, composeMessageStatus } = useBlastStore();
   const [theme, setTheme] = useState("");
   const [title, setTitle] = useState("");
   return (
@@ -37,7 +38,13 @@ const MessageStep = () => {
                 onChange={(e) => setTheme(e.target.value)}
               />
             </div>
-            <Button className="w-full">Generate Message</Button>
+            <Button className="w-full" onClick={() => composeMessage(theme)}>
+              {!composeMessageStatus && <Send className="mr-2" size={16} />}
+              {composeMessageStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
+              {composeMessageStatus === "success" && <CheckCircle className="mr-2" size={16} />}
+              {composeMessageStatus === "error" && <XCircle className="mr-2" size={16} />}
+              {composeMessageStatus === "loading" ? "Generating..." : composeMessageStatus === "success" ? "Generated" : "Generate Message"}
+            </Button>
           </div>
         </CardContent>
 
