@@ -45,13 +45,28 @@ const iconMap = {
   CheckCircle2: <CheckCircle2 className="text-teal-500 w-4 h-4" />,
 };
 
+const formatDate = (dateString: string) => {
+  return new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Hong_Kong", // +8 timezone
+  }).format(new Date(dateString)).replace(/\//g, "-");
+};
+
+
 export default function Page() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
     const fetchDashboard = async () => {
+      const agentPhone = "85268712802"; // dynamicallyy'y'y'yyyyy use logged-in agent's phone
+
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${agentPhone}`);
         console.log("✅ Dashboard data fetched:", response.data);
         setDashboardData(response.data);
       } catch (error) {
@@ -76,7 +91,7 @@ export default function Page() {
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards />
+              <SectionCards agentPhone="85268712802"/>
               <div className="px-4 lg:px-6">{/* <ChartAreaInteractive /> */}</div>
 
               <div className="mx-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -98,7 +113,7 @@ export default function Page() {
                       </div>
                     ))}
                   </CardContent>
-                </Card>
+                </Card> 
 
                 <Card>
                   <CardHeader className="flex justify-between">
@@ -113,7 +128,7 @@ export default function Page() {
                       <div key={i} className="flex items-center space-x-2">
                         {iconMap[activity.icon]}
                         <span>{activity.description}</span>
-                        <span className="ml-auto text-xs text-muted-foreground">{activity.timestamp}</span>
+                        <span className="ml-auto text-xs text-muted-foreground">{formatDate(activity.timestamp)}</span>
                       </div>
                     ))}
                   </CardContent>
