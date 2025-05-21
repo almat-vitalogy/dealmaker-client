@@ -8,37 +8,65 @@ import {
   MessageSquare,
   PlusCircle,
   RefreshCcw,
-  Send,
   XCircle,
+  LucideIcon,
 } from "lucide-react";
 import axios from "axios";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import React, { useEffect, useState } from "react";
+import React, { JSX, useEffect, useState } from "react";
 
-interface BlastMessage {
-  _id: string;
-  title: string;
-  sent: number;
-  delivered: number;
-  failed: number;
-  date: string;
-  status: string;
-  activity: {
-    icon: string;
-    description: string;
-    timestamp: string;
-  };
+interface ActivityItem {
+  icon: string;
+  description: string;
+  timestamp: string;
 }
+
+const iconMap: Record<string, JSX.Element> = {
+  CheckCircle: <CheckCircle className="text-green-500 w-5 h-5" />,
+  CheckCircle2: <CheckCircle2 className="text-teal-500 w-5 h-5" />,
+  MessageSquare: <MessageSquare className="text-indigo-500 w-5 h-5" />,
+  PlusCircle: <PlusCircle className="text-purple-500 w-5 h-5" />,
+  RefreshCcw: <RefreshCcw className="text-blue-500 w-5 h-5" />,
+  XCircle: <XCircle className="text-red-500 w-5 h-5" />,
+};
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "Invalid date";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Hong_Kong",
+  })
+    .format(date)
+    .replace(/\//g, "-")
+    .replace(",", "");
+};
+
 export default function Page() {
-  const [activityFeed, setActivityFeed] = useState<BlastMessage[]>([]);
+  const [activityFeed, setActivities] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
     const fetchActivityFeed = async () => {
+      const agentPhone = "85268712802"; // dynamically use logged-in agent's phone
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/activity-feed`);
-        console.log("✅ Fetched Blast Messages for Activity Feed:", response.data);
-        setActivityFeed(response.data);
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${agentPhone}`
+        );
+
+        const recentActivities = response.data.recentActivity.map((item: any) => ({
+          icon: item.icon,
+          description: item.description,
+          timestamp: item.timestamp,
+        }));
+
+        setActivities(recentActivities);
       } catch (error) {
         console.error("❌ Error fetching Activity Feed data:", error);
       }
@@ -47,35 +75,12 @@ export default function Page() {
     fetchActivityFeed();
   }, []);
 
-  const getIconComponent = (iconName: string) => {
-    switch (iconName) {
-      case "Send":
-        return Send;
-      case "PlusCircle":
-        return PlusCircle;
-      case "RefreshCcw":
-        return RefreshCcw;
-      case "MessageSquare":
-        return MessageSquare;
-      case "CheckCircle":
-        return CheckCircle;
-      case "CheckCircle2":
-        return CheckCircle2;
-      case "XCircle":
-        return XCircle;
-      default:
-        return MessageSquare;
-    }
-  };
-
   return (
     <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
+      style={{
+        "--sidebar-width": "calc(var(--spacing) * 72)",
+        "--header-height": "calc(var(--spacing) * 12)",
+      } as React.CSSProperties}
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
@@ -86,23 +91,21 @@ export default function Page() {
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {activityFeed.map((item) => {
-                const Icon = getIconComponent(item.activity.icon);
-                return (
-                  <div key={item._id} className="flex items-start gap-4">
-                    <div className="rounded-full bg-muted p-2">
-                      <Icon className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{item.title}</p>
-                      <p className="text-sm text-muted-foreground">{item.activity.description}</p>
-                    </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {item.activity.timestamp}
-                    </span>
+              {activityFeed.map((item, index) => (
+                <div key={index} className="flex items-start gap-4">
+                  <div className="rounded-full">
+                    {iconMap[item.icon] || (
+                      <MessageSquare className="text-indigo-500 w-5 h-5" />
+                    )}
                   </div>
-                );
-              })}
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{item.description}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {formatDate(item.timestamp)}
+                  </span>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </div>
@@ -110,4 +113,3 @@ export default function Page() {
     </SidebarProvider>
   );
 }
-

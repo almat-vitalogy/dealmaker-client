@@ -9,7 +9,6 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 interface BlastItem {
-  _id: string;
   title: string;
   sent: number;
   delivered: number;
@@ -18,21 +17,47 @@ interface BlastItem {
   status: string;
 }
 
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "Invalid date";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Hong_Kong",
+  })
+    .format(date)
+    .replace(/\//g, "-")
+    .replace(",", "");
+};
+
 export default function Page() {
   const [blasts, setBlasts] = useState<BlastItem[]>([]);
 
   useEffect(() => {
     const fetchBlasts = async () => {
+      const agentPhone = "85268712802"; // dynamically use logged-in agent's phone
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/blast-dashboard`);
-        setBlasts(response.data);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${agentPhone}`);
+        const blastData = response.data.blastMessages.map((blast: any) => ({
+          title: blast.title,
+          sent: blast.sent,
+          delivered: blast.delivered,
+          failed: blast.failed,
+          date: formatDate(blast.createdAt),
+          status: blast.status,
+        }));
+        setBlasts(blastData);
       } catch (error) {
         console.error("❌ Error fetching Blast Dashboard data:", error);
       }
     };
     fetchBlasts();
   }, []);
-
 
   return (
     <SidebarProvider
@@ -43,16 +68,22 @@ export default function Page() {
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards />
+              <SectionCards agentPhone="85268712802"/>
               <div className="p-6 space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Blast History</CardTitle>
                   </CardHeader>
                   <CardContent className="overflow-x-auto">
-                    <BlastHistoryTable data={blasts.map(({ _id, title, sent, delivered, failed, date }) => ({
-                      title, sent, delivered, failed, date
-                    }))} />
+                    <BlastHistoryTable
+                      data={blasts.map(({ title, sent, delivered, failed, date }) => ({
+                        title,
+                        sent,
+                        delivered,
+                        failed,
+                        date,
+                      }))}
+                    />
                   </CardContent>
                 </Card>
               </div>

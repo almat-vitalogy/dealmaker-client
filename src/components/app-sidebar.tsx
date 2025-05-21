@@ -48,17 +48,6 @@ const data = {
       icon: IconDeviceMobile,
     },
     {
-      title: "Contacts",
-      url: "/contacts",
-      // icon: IconChartBar,
-      icon: IconUsers,
-    },
-    {
-      title: "Message Composer",
-      url: "/message-composer",
-      icon: IconPencil,
-    },
-    {
       title: "Blast Dashboard",
       url: "/blast-dashboard",
       icon: IconChartBar,
