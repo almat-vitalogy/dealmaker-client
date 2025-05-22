@@ -9,25 +9,18 @@ import {
   IconFileAi,
   IconFileDescription,
   IconFileWord,
-  // IconFolder,
   IconHelp,
-  IconInnerShadowTop,
-  // IconListDetails,
   IconReport,
   IconSearch,
   IconSettings,
-  IconUsers,
   IconDeviceMobile,
-  IconPencil,
-  // IconHomeStats,
   IconActivity,
 } from "@tabler/icons-react";
 
-// import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
-// import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { Handshake } from "lucide-react";
 
 const data = {
   user: {
@@ -142,7 +135,21 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  user:
+    | {
+        id: string;
+        name: string;
+        email: string;
+        emailVerified: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        image?: string | null | undefined | undefined;
+      }
+    | undefined;
+}
+
+export function AppSidebar({ ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -150,7 +157,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <a href="/dashboard">
-                <IconInnerShadowTop className="!size-5" />
+                <Handshake className="!size-5" />
                 <span className="text-base font-semibold">Deal Maker</span>
               </a>
             </SidebarMenuButton>
@@ -163,7 +170,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={props.user} />
       </SidebarFooter>
     </Sidebar>
   );
