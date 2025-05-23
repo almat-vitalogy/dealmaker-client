@@ -21,6 +21,9 @@ const ContactsStep = () => {
         </CardContent> */}
         {/* <div className=""></div> */}
         <CardHeader>
+          <CardTitle className="mx-auto">1. Select who is going to receive your blast</CardTitle>
+        </CardHeader>
+        <CardHeader>
           <CardTitle>Scrape Contacts</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">

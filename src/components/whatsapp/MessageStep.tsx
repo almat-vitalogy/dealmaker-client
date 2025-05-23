@@ -13,6 +13,9 @@ const MessageStep = () => {
     <div className="-mt-6">
       <Card className="border-none shadow-none">
         <CardHeader>
+          <CardTitle className="mx-auto">2. Write a message you want to blast or generate it using AI</CardTitle>
+        </CardHeader>
+        <CardHeader>
           <CardTitle>Title</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">

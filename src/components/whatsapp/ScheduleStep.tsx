@@ -12,8 +12,10 @@ const ScheduleStep = () => {
   return (
     <div className="-mt-6">
       <Card className="border-none shadow-none">
-        <CardHeader>{/* <CardTitle>Preview Message</CardTitle> */}</CardHeader>
-        <CardContent className="-mt-5">
+        <CardHeader>
+          <CardTitle className="mx-auto">3. Save, Send, or Schedule</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-6">
             <div>
               <CardTitle className="mb-2">Recipients ({selectedContacts.length})</CardTitle>

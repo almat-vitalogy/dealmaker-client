@@ -119,10 +119,9 @@ export default function WebControllerClient({ user }: { user: any }) {
               </CardContent>
             </Card>
           </div>
-
           <Card className="relative p-6">
             <CardHeader className="text-center text-lg">
-              <CardTitle>Send Message</CardTitle>
+              <CardTitle>Send a new Blast</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Carousel className="h-[700px]" setApi={setCarouselApi}>
@@ -145,6 +144,15 @@ export default function WebControllerClient({ user }: { user: any }) {
                   <div key={i} className={`w-2 h-2 rounded-full ${i === currentSlide ? "bg-primary" : "bg-gray-300"} transition-all duration-300`} />
                 ))}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="relative p-6">
+            <CardHeader className="text-center text-lg">
+              <CardTitle>Send existing Blast</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ContactsStep />
             </CardContent>
           </Card>
         </div>
