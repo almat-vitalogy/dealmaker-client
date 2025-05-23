@@ -13,7 +13,7 @@ interface DashboardData {
   successRate: number;
 }
 
-export function SectionCards({ agentPhone }: { agentPhone: string }) {
+export function SectionCards({ userEmail }: { userEmail: string }) {
   const [data, setData] = useState<DashboardData>({
     totalContacts: 0,
     messagesSent: 0,
@@ -24,7 +24,7 @@ export function SectionCards({ agentPhone }: { agentPhone: string }) {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${agentPhone}`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${encodeURIComponent(userEmail)}`);
         const fetchedData = response.data;
         console.log("✅ Dashboard data fetched:", fetchedData);
         console.log("✅ Dashboard fetchedData.blastMessages:", fetchedData.blastMessages);
@@ -44,7 +44,7 @@ export function SectionCards({ agentPhone }: { agentPhone: string }) {
     }
 
     fetchData();
-  }, [agentPhone]);
+  }, [userEmail]);
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">

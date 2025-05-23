@@ -1,14 +1,46 @@
-import React, { useState } from "react";
+"use client";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CheckCircle, Loader2, Send, XCircle } from "lucide-react";
 import { useBlastStore } from "@/store/blast";
 
-const ContactsStep = () => {
-  const { contacts, selectContact, addContact, selectedContacts, scrapeContacts, contactStatus } = useBlastStore();
+interface ContactsStepProps {
+  user?: any;
+}
+
+const ContactsStep = ({ user }: ContactsStepProps) => {
+  const userEmail = encodeURIComponent(user?.email || "");
+
+  const { contacts, selectContact, selectedContacts, scrapeContacts, contactStatus, setContacts, addContactToDB, deleteContactFromDB } =
+    useBlastStore();
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+
+  useEffect(() => {
+    if (!userEmail) return;
+
+    const fetchContacts = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/get-contacts/${userEmail}`);
+        const data = await response.json();
+        setContacts(data);
+      } catch (error) {
+        console.error("❌ Error fetching contacts:", error);
+      }
+    };
+    fetchContacts();
+  }, [userEmail, setContacts]);
+
+  const handleDelete = (name: string, phone: string) => {
+    const confirmed = window.confirm(`Are you sure you want to delete ${name || phone}?`);
+    if (confirmed) {
+      deleteContactFromDB(userEmail, phone);
+      alert(`${name || phone} has been deleted!`);
+    }
+  };
 
   return (
     <div className="-mt-6">
@@ -32,39 +64,27 @@ const ContactsStep = () => {
             {contactStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
             {contactStatus === "success" && <CheckCircle className="mr-2" size={16} />}
             {contactStatus === "error" && <XCircle className="mr-2" size={16} />}
-            {contactStatus === "loading" ? "Scraping..." : contactStatus === "success" ? "Scraped" : "Scrape contacts from whatsapp (connect first)"}
+            {contactStatus === "loading" ? "Scraping..." : contactStatus === "success" ? "Scraped" : "Scrape contacts from WhatsApp (connect first)"}
           </Button>
         </CardContent>
-        <div className=""></div>
+
         <CardHeader>
           <CardTitle>Add Contact Manually</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-6">
-              <div>
-                <Input className="text-black" id="name" placeholder="Name (John Doe)" value={name} onChange={(e) => setName(e.target.value)} />
-              </div>
-              <div>
-                <Input
-                  className="text-black"
-                  id="phone"
-                  placeholder="Phone Number (85291234567)"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-              </div>
+              <Input className="text-black" placeholder="Name (John Doe)" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input className="text-black" placeholder="Phone Number (85291234567)" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
-
             <Button
               onClick={() => {
-                addContact(name, phone);
+                addContactToDB(userEmail, name, phone);
                 setName("");
                 setPhone("");
               }}
               className="w-full"
             >
-              {/* <Check className="mr-2" size={16} /> */}
               Add Contact
             </Button>
           </div>
@@ -73,23 +93,25 @@ const ContactsStep = () => {
 
       <Card className="border-none shadow-none">
         <CardHeader>
-          <CardTitle>Contact List</CardTitle>
+          <CardTitle>{`Contact List (${contacts ? contacts.length : 0})`}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3 max-h-[250px] overflow-y-auto">
-            {contacts.map((contact, index) => (
+            {(contacts || []).map((contact, index) => (
               <div key={index} className="flex items-center justify-between border-b pb-2">
                 <div className="flex items-center">
                   <input
                     type="checkbox"
-                    id={`contact-${index}`}
-                    checked={selectedContacts.some((c) => c === contact.phone)}
+                    checked={selectedContacts.includes(contact.phone)}
                     onChange={() => selectContact(contact.phone)}
                     className="mr-3 h-4 w-4"
                   />
-                  <label htmlFor={`contact-${index}`}>{contact.name}</label>
+                  <label>{contact.name || contact.phone}</label>
                 </div>
-                <span className="text-muted-foreground">{contact.phone}</span>
+                <span className="text-muted-foreground flex items-center gap-2">
+                  {contact.phone}
+                  <XCircle className="cursor-pointer hover:text-red-500" size={16} onClick={() => handleDelete(contact.name, contact.phone)} />
+                </span>
               </div>
             ))}
           </div>

@@ -40,15 +40,15 @@ export default function BlastDashboardClient({ user }: { user: any }) {
 
   useEffect(() => {
     const fetchBlasts = async () => {
-      const agentPhone = "85268712802"; // dynamically use logged-in agent's phone
+      const userEmail = encodeURIComponent(user.email);
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${agentPhone}`);
-        const blastData = response.data.blastMessages.map((blast: any) => ({
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/blast-messages/${userEmail}`);
+        const blastData = response.data.map((blast: any) => ({
           title: blast.title,
           sent: blast.sent,
           delivered: blast.delivered,
           failed: blast.failed,
-          date: formatDate(blast.createdAt),
+          date: formatDate(blast.scheduledAt), 
           status: blast.status,
         }));
         setBlasts(blastData);
@@ -57,7 +57,7 @@ export default function BlastDashboardClient({ user }: { user: any }) {
       }
     };
     fetchBlasts();
-  }, []);
+  }, [user.email]);
 
   return (
     <SidebarProvider
@@ -69,7 +69,7 @@ export default function BlastDashboardClient({ user }: { user: any }) {
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards agentPhone="85268712802" />
+              <SectionCards userEmail={user.email} />
               <div className="p-6 space-y-6">
                 <Card>
                   <CardHeader>

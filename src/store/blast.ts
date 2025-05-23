@@ -20,7 +20,7 @@ interface BlastState {
 
   setContactStatus: (status: "success" | "loading" | "error" | "") => void;
   setContacts: (contacts: Contact[]) => void;
-  addContact: (name: string, phone: string) => void;
+  // addContact: (name: string, phone: string) => void;
   selectContact: (phone: string) => void;
   setMessage: (message: string) => void;
   setConnectionStatus: (status: "Connect" | "Loading..." | "Disconnect") => void;
@@ -31,6 +31,8 @@ interface BlastState {
   scrapeContacts: () => Promise<void>;
   composeMessage: (goal: string) => Promise<void>;
   clearStorage: () => void;
+  addContactToDB: (agentPhone: string, name: string, phone: string) => Promise<void>;
+  deleteContactFromDB: (agentPhone: string, phone: string) => Promise<void>;
 }
 
 export const useBlastStore = create<BlastState>()(
@@ -48,10 +50,12 @@ export const useBlastStore = create<BlastState>()(
 
       setContactStatus: (status) => set({ contactStatus: status }),
       setContacts: (contacts) => set({ contacts }),
-      addContact: (name, phone) =>
-        set((state) => ({
-          contacts: [...state.contacts, { name, phone }],
-        })),
+
+      // addContact: (name, phone) =>
+      //   set((state) => ({
+      //     contacts: [...state.contacts, { name, phone }],
+      //   })),
+        
       selectContact: (phone) =>
         set((state) => {
           const isSelected = state.selectedContacts.includes(phone);
@@ -213,10 +217,36 @@ export const useBlastStore = create<BlastState>()(
       clearStorage: () =>
         set({
           contacts: [],
+          selectedContacts: [],
           message: "",
           userId: "",
           qrCodeUrl: "",
+          connectionStatus: "Connect",
+          messageStatus: "",
+          contactStatus: "",
+          composeMessageStatus: "",
         }),
+
+      addContactToDB: async (agentPhone, name, phone) => {
+        try {
+          const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/add-contact/${agentPhone}`, { name, phone });
+          set((state) => ({ contacts: [...state.contacts, response.data.contact] }));
+          console.log(`✅ ${name || "Unnamed Contact"} (${phone}) has been added successfully!`);
+        } catch (error) {
+          console.error("❌ Error adding contact to DB:", error);
+        }
+      },
+
+      deleteContactFromDB: async (agentPhone, phone) => {
+        try {
+          await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/delete-contact/${agentPhone}/${phone}`);
+          set((state) => ({ contacts: state.contacts.filter((c) => c.phone !== phone) }));
+          console.log(`🗑️ Contact (${phone}) has been deleted successfully!`);
+        } catch (error) {
+          console.error("❌ Error deleting contact from DB:", error);
+        }
+      },
+
     }),
     {
       name: "blast-storage",
