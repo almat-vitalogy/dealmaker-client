@@ -2,15 +2,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import {
-  CheckCircle,
-  CheckCircle2,
-  MessageSquare,
-  PlusCircle,
-  RefreshCcw,
-  XCircle,
-  LucideIcon,
-} from "lucide-react";
+import { CheckCircle, CheckCircle2, MessageSquare, PlusCircle, RefreshCcw, XCircle, LucideIcon } from "lucide-react";
 import axios from "axios";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,16 +41,14 @@ const formatDate = (dateString: string) => {
     .replace(",", "");
 };
 
-export default function Page() {
+export default function ActivityFeedClient({ user }: { user: any }) {
   const [activityFeed, setActivities] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
     const fetchActivityFeed = async () => {
       const agentPhone = "85268712802"; // dynamically use logged-in agent's phone
       try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${agentPhone}`
-        );
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${agentPhone}`);
 
         const recentActivities = response.data.recentActivity.map((item: any) => ({
           icon: item.icon,
@@ -77,12 +67,14 @@ export default function Page() {
 
   return (
     <SidebarProvider
-      style={{
-        "--sidebar-width": "calc(var(--spacing) * 72)",
-        "--header-height": "calc(var(--spacing) * 12)",
-      } as React.CSSProperties}
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
     >
-      <AppSidebar variant="inset" user={undefined} />
+      <AppSidebar variant="inset" user={user} />
       <SidebarInset>
         <SiteHeader left="Activity Feed" right="" />
         <div className="p-6">
@@ -93,17 +85,11 @@ export default function Page() {
             <CardContent className="space-y-6">
               {activityFeed.map((item, index) => (
                 <div key={index} className="flex items-start gap-4">
-                  <div className="rounded-full">
-                    {iconMap[item.icon] || (
-                      <MessageSquare className="text-indigo-500 w-5 h-5" />
-                    )}
-                  </div>
+                  <div className="rounded-full">{iconMap[item.icon] || <MessageSquare className="text-indigo-500 w-5 h-5" />}</div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">{item.description}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {formatDate(item.timestamp)}
-                  </span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(item.timestamp)}</span>
                 </div>
               ))}
             </CardContent>
