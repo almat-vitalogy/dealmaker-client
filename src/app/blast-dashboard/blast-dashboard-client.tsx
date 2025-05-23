@@ -35,7 +35,7 @@ const formatDate = (dateString: string) => {
     .replace(",", "");
 };
 
-export default async function BlastDashboardClient({ user }: { user: any }) {
+export default function BlastDashboardClient({ user }: { user: any }) {
   const [blasts, setBlasts] = useState<BlastItem[]>([]);
 
   useEffect(() => {
