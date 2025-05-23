@@ -1,15 +1,49 @@
-import React, { useState } from "react";
+"use client";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CheckCircle, Loader2, Send, XCircle } from "lucide-react";
 import { useBlastStore } from "@/store/blast";
 
+const agentPhone = "85268712802"; // Dynamically set this for logged-in agent
+
 const ContactsStep = () => {
-  const { contacts, selectContact, addContact, selectedContacts, scrapeContacts, contactStatus } = useBlastStore();
+  const {
+    contacts,
+    selectContact,
+    selectedContacts,
+    scrapeContacts,
+    contactStatus,
+    setContacts,
+    addContactToDB,
+    deleteContactFromDB,
+  } = useBlastStore();
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
+  useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${agentPhone}`);
+        const data = await response.json();
+        setContacts(data.contacts);
+      } catch (error) {
+        console.error("❌ Error fetching contacts:", error);
+      }
+    };
+    fetchContacts();
+  }, [setContacts]);
+
+  const handleDelete = (name: string, phone: string) => {
+    const confirmed = window.confirm(`Are you sure you want to delete ${name || phone}?`);
+    if (confirmed) {
+      deleteContactFromDB(agentPhone, phone);
+      alert(`${name || phone} has been deleted!`);
+    }
+  };
+  
   return (
     <div className="-mt-6">
       <Card className="w-full border-none shadow-none">
@@ -55,13 +89,12 @@ const ContactsStep = () => {
 
             <Button
               onClick={() => {
-                addContact(name, phone);
+                addContactToDB(agentPhone, name, phone);
                 setName("");
                 setPhone("");
               }}
               className="w-full"
             >
-              {/* <Check className="mr-2" size={16} /> */}
               Add Contact
             </Button>
           </div>
@@ -70,23 +103,29 @@ const ContactsStep = () => {
 
       <Card className="border-none shadow-none">
         <CardHeader>
-          <CardTitle>Contact List</CardTitle>
+          <CardTitle>{`Contact List (${contacts ? contacts.length : 0})`}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3 max-h-[250px] overflow-y-auto">
-            {contacts.map((contact, index) => (
+            {(contacts || []).map((contact, index) => (
               <div key={index} className="flex items-center justify-between border-b pb-2">
                 <div className="flex items-center">
                   <input
                     type="checkbox"
-                    id={`contact-${index}`}
-                    checked={selectedContacts.some((c) => c === contact.phone)}
+                    checked={selectedContacts.includes(contact.phone)}
                     onChange={() => selectContact(contact.phone)}
                     className="mr-3 h-4 w-4"
                   />
-                  <label htmlFor={`contact-${index}`}>{contact.name}</label>
+                  <label>{contact.name || contact.phone}</label>
                 </div>
-                <span className="text-muted-foreground">{contact.phone}</span>
+                <span className="text-muted-foreground flex items-center gap-2">
+                  {contact.phone}
+                  <XCircle
+                    className="cursor-pointer hover:text-red-500"
+                    size={16}
+                    onClick={() => handleDelete(contact.name, contact.phone)}
+                  />
+                </span>
               </div>
             ))}
           </div>
