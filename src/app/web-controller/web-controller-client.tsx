@@ -128,7 +128,7 @@ export default function WebControllerClient({ user }: { user: any }) {
               <Carousel className="h-[700px]" setApi={setCarouselApi}>
                 <CarouselContent>
                   <CarouselItem>
-                    <ContactsStep />
+                    <ContactsStep user={user} />
                   </CarouselItem>
                   <CarouselItem>
                     <MessageStep />

@@ -6,9 +6,13 @@ import { Input } from "@/components/ui/input";
 import { CheckCircle, Loader2, Send, XCircle } from "lucide-react";
 import { useBlastStore } from "@/store/blast";
 
-const agentPhone = "85268712802"; // Dynamically set this for logged-in agent
+interface ContactsStepProps {
+  user?: any;
+}
 
-const ContactsStep = () => {
+const ContactsStep = ({ user }: ContactsStepProps) => {
+  const userEmail = encodeURIComponent(user?.email || "");
+
   const {
     contacts,
     selectContact,
@@ -24,26 +28,28 @@ const ContactsStep = () => {
   const [phone, setPhone] = useState("");
 
   useEffect(() => {
+    if (!userEmail) return;
+
     const fetchContacts = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${agentPhone}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/get-contacts/${userEmail}`);
         const data = await response.json();
-        setContacts(data.contacts);
+        setContacts(data);
       } catch (error) {
         console.error("❌ Error fetching contacts:", error);
       }
     };
     fetchContacts();
-  }, [setContacts]);
+  }, [userEmail, setContacts]);
 
   const handleDelete = (name: string, phone: string) => {
     const confirmed = window.confirm(`Are you sure you want to delete ${name || phone}?`);
     if (confirmed) {
-      deleteContactFromDB(agentPhone, phone);
+      deleteContactFromDB(userEmail, phone);
       alert(`${name || phone} has been deleted!`);
     }
   };
-  
+
   return (
     <div className="-mt-6">
       <Card className="w-full border-none shadow-none">
@@ -53,7 +59,7 @@ const ContactsStep = () => {
         <CardContent className="-mt-5">
           <Button className="w-full">Upload CSV, Excel, or Google Sheets</Button>
         </CardContent>
-        <div className=""></div>
+
         <CardHeader>
           <CardTitle>Scrape Contacts</CardTitle>
         </CardHeader>
@@ -63,33 +69,36 @@ const ContactsStep = () => {
             {contactStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
             {contactStatus === "success" && <CheckCircle className="mr-2" size={16} />}
             {contactStatus === "error" && <XCircle className="mr-2" size={16} />}
-            {contactStatus === "loading" ? "Scraping..." : contactStatus === "success" ? "Scraped" : "Scrape contacts from whatsapp (connect first)"}
+            {contactStatus === "loading"
+              ? "Scraping..."
+              : contactStatus === "success"
+              ? "Scraped"
+              : "Scrape contacts from WhatsApp (connect first)"}
           </Button>
         </CardContent>
-        <div className=""></div>
+
         <CardHeader>
           <CardTitle>Add Contact Manually</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-6">
-              <div>
-                <Input className="text-black" id="name" placeholder="Name (John Doe)" value={name} onChange={(e) => setName(e.target.value)} />
-              </div>
-              <div>
-                <Input
-                  className="text-black"
-                  id="phone"
-                  placeholder="Phone Number (85291234567)"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-              </div>
+              <Input
+                className="text-black"
+                placeholder="Name (John Doe)"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <Input
+                className="text-black"
+                placeholder="Phone Number (85291234567)"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
             </div>
-
             <Button
               onClick={() => {
-                addContactToDB(agentPhone, name, phone);
+                addContactToDB(userEmail, name, phone);
                 setName("");
                 setPhone("");
               }}

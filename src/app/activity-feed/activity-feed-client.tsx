@@ -2,7 +2,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { CheckCircle, CheckCircle2, MessageSquare, PlusCircle, RefreshCcw, XCircle, LucideIcon } from "lucide-react";
+import { CheckCircle, CheckCircle2, MessageSquare, PlusCircle, RefreshCcw, XCircle } from "lucide-react";
 import axios from "axios";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import React, { JSX, useEffect, useState } from "react";
 interface ActivityItem {
   icon: string;
   description: string;
-  timestamp: string;
+  updatedAt: string;
 }
 
 const iconMap: Record<string, JSX.Element> = {
@@ -41,19 +41,20 @@ const formatDate = (dateString: string) => {
     .replace(",", "");
 };
 
+
 export default function ActivityFeedClient({ user }: { user: any }) {
   const [activityFeed, setActivities] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
     const fetchActivityFeed = async () => {
-      const agentPhone = "85268712802"; // dynamically use logged-in agent's phone
+      const userEmail = encodeURIComponent(user.email);
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${agentPhone}`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/activities/${userEmail}`);
 
-        const recentActivities = response.data.recentActivity.map((item: any) => ({
-          icon: item.icon,
-          description: item.description,
-          timestamp: item.timestamp,
+        const recentActivities = response.data.map((item: any) => ({
+          icon: mapActionToIcon(item.action),
+          description: item.action,
+          updatedAt: item.updatedAt,
         }));
 
         setActivities(recentActivities);
@@ -63,7 +64,21 @@ export default function ActivityFeedClient({ user }: { user: any }) {
     };
 
     fetchActivityFeed();
-  }, []);
+  }, [user.email]);
+  
+  const mapActionToIcon = (action: string): string => {
+    const iconMapping: Record<string, string> = {
+      "contacts scraped": "CheckCircle2",
+      "contact added": "PlusCircle",
+      "blast created": "MessageSquare",
+      "blast sent": "CheckCircle",
+      "session connected": "RefreshCcw",
+      "session disconnected": "XCircle",
+      error: "XCircle",
+    };
+
+    return iconMapping[action] || "MessageSquare";
+  };
 
   return (
     <SidebarProvider
@@ -85,11 +100,15 @@ export default function ActivityFeedClient({ user }: { user: any }) {
             <CardContent className="space-y-6">
               {activityFeed.map((item, index) => (
                 <div key={index} className="flex items-start gap-4">
-                  <div className="rounded-full">{iconMap[item.icon] || <MessageSquare className="text-indigo-500 w-5 h-5" />}</div>
+                  <div className="rounded-full">
+                    {iconMap[item.icon] || <MessageSquare className="text-indigo-500 w-5 h-5" />}
+                  </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">{item.description}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(item.timestamp)}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {formatDate(item.updatedAt)}
+                  </span>
                 </div>
               ))}
             </CardContent>

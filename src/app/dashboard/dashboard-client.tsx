@@ -17,7 +17,7 @@ interface RecentBlast {
   sent: number;
   delivered: number;
   failed: number;
-  date: string;
+  scheduledAt: string;
 }
 
 interface RecentActivity {
@@ -28,8 +28,6 @@ interface RecentActivity {
 
 interface DashboardData {
   totalContacts: number;
-  messagesSent: number;
-  scheduledBlasts: number;
   successRate: number;
   recentBlasts: RecentBlast[];
   recentActivity: RecentActivity[];
@@ -53,10 +51,8 @@ const formatDate = (dateString: string) => {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-    timeZone: "Asia/Hong_Kong", // +8 timezone
-  })
-    .format(new Date(dateString))
-    .replace(/\//g, "-");
+    timeZone: "Asia/Hong_Kong",
+  }).format(new Date(dateString)).replace(/\//g, "-");
 };
 
 export default function DashboardClient({ user }: { user: any }) {
@@ -64,10 +60,10 @@ export default function DashboardClient({ user }: { user: any }) {
 
   useEffect(() => {
     const fetchDashboard = async () => {
-      const agentPhone = "85268712802"; // dynamicallyy'y'y'yyyyy use logged-in agent's phone
+      const userEmail = user.email;
 
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${agentPhone}`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${encodeURIComponent(userEmail)}`);
         console.log("✅ Dashboard data fetched:", response.data);
         setDashboardData(response.data);
       } catch (error) {
@@ -75,7 +71,7 @@ export default function DashboardClient({ user }: { user: any }) {
       }
     };
     fetchDashboard();
-  }, []);
+  }, [user.email]);
 
   return (
     <SidebarProvider
@@ -92,8 +88,8 @@ export default function DashboardClient({ user }: { user: any }) {
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards agentPhone="85268712802" />
-              <div className="px-4 lg:px-6">{/* <ChartAreaInteractive /> */}</div>
+              <SectionCards userEmail={user.email} />
+              <div className="px-4 lg:px-6"></div>
 
               <div className="mx-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
@@ -129,7 +125,9 @@ export default function DashboardClient({ user }: { user: any }) {
                       <div key={i} className="flex items-center space-x-2">
                         {iconMap[activity.icon]}
                         <span>{activity.description}</span>
-                        <span className="ml-auto text-xs text-muted-foreground">{formatDate(activity.timestamp)}</span>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {formatDate(activity.timestamp)}
+                        </span>
                       </div>
                     ))}
                   </CardContent>
