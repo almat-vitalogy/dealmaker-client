@@ -60,9 +60,9 @@ const MessageStep = () => {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
-            <div className="flex w-full">
+            {/* <div className="flex w-full">
               <Button className="w-full">Save Blast</Button>
-            </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>

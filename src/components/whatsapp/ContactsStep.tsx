@@ -13,13 +13,13 @@ const ContactsStep = () => {
   return (
     <div className="-mt-6">
       <Card className="w-full border-none shadow-none">
-        <CardHeader>
+        {/* <CardHeader>
           <CardTitle>Import Contacts</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
           <Button className="w-full">Upload CSV, Excel, or Google Sheets</Button>
-        </CardContent>
-        <div className=""></div>
+        </CardContent> */}
+        {/* <div className=""></div> */}
         <CardHeader>
           <CardTitle>Scrape Contacts</CardTitle>
         </CardHeader>

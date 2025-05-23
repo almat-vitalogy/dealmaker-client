@@ -4,6 +4,7 @@ import { CheckCircle, Loader2, Send, XCircle } from "lucide-react";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { useBlastStore } from "@/store/blast";
 import { DateTimePicker24hForm } from "../ui/date-time-picker";
+import { Switch } from "../ui/switch";
 
 const ScheduleStep = () => {
   const { contacts, message, selectedContacts, sendMessage, messageStatus } = useBlastStore();
@@ -39,7 +40,10 @@ const ScheduleStep = () => {
         </CardContent>
         <div className=""></div>
         <CardHeader>
-          <CardTitle>Send Options</CardTitle>
+          <CardTitle className="flex items-center">
+            Save this Blast?
+            <Switch className="ml-4" />
+          </CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
           <div className="space-y-4">
