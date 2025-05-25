@@ -4,11 +4,10 @@ import { CheckCircle, Loader2, Send, XCircle } from "lucide-react";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { useBlastStore } from "@/store/blast";
 import { DateTimePicker24hForm } from "../ui/date-time-picker";
-import { Switch } from "../ui/switch";
 
-const ScheduleStep = () => {
+const ScheduleStep = ({ user }: any) => {
   const { contacts, message, selectedContacts, sendMessage, messageStatus } = useBlastStore();
-
+  const userEmail = user.email || "";
   return (
     <div className="-mt-6">
       <Card className="border-none shadow-none">
@@ -42,10 +41,10 @@ const ScheduleStep = () => {
         </CardContent>
         <div className=""></div>
         <CardHeader>
-          <CardTitle className="flex items-center">
+          {/* <CardTitle className="flex items-center">
             Save this Blast?
             <Switch className="ml-4" />
-          </CardTitle>
+          </CardTitle> */}
         </CardHeader>
         <CardContent className="-mt-5">
           <div className="space-y-4">
@@ -64,7 +63,7 @@ const ScheduleStep = () => {
                 <DialogDescription className="hidden"></DialogDescription>
                 <div className="flex gap-4 mt-4 w-full">
                   <DialogClose
-                    onClick={sendMessage}
+                    onClick={() => sendMessage(userEmail)}
                     className={`px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg transition w-1/2  duration-200 ${
                       messageStatus === "loading" || !contacts || !message ? "cursor-not-allowed" : "cursor-pointer"
                     }`}

@@ -12,6 +12,7 @@ interface ContactsStepProps {
 
 const ContactsStep = ({ user }: ContactsStepProps) => {
   const userEmail = encodeURIComponent(user?.email || "");
+  const userEmail2 = user?.email || "";
 
   const { contacts, selectContact, selectedContacts, scrapeContacts, contactStatus, setContacts, addContactToDB, deleteContactFromDB } =
     useBlastStore();
@@ -37,7 +38,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
   const handleDelete = (name: string, phone: string) => {
     const confirmed = window.confirm(`Are you sure you want to delete ${name || phone}?`);
     if (confirmed) {
-      deleteContactFromDB(userEmail, phone);
+      deleteContactFromDB(userEmail, phone, userEmail2);
       alert(`${name || phone} has been deleted!`);
     }
   };
@@ -59,7 +60,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
           <CardTitle>Scrape Contacts</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
-          <Button className="w-full" onClick={scrapeContacts}>
+          <Button className="w-full" onClick={() => scrapeContacts(userEmail2)}>
             {!contactStatus && <Send className="mr-2" size={16} />}
             {contactStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
             {contactStatus === "success" && <CheckCircle className="mr-2" size={16} />}
@@ -79,7 +80,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
             </div>
             <Button
               onClick={() => {
-                addContactToDB(userEmail, name, phone);
+                addContactToDB(userEmail, name, phone, userEmail2);
                 setName("");
                 setPhone("");
               }}

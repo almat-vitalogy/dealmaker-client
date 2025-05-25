@@ -10,11 +10,13 @@ import axios from "axios";
 
 interface BlastItem {
   title: string;
-  sent: number;
-  delivered: number;
-  failed: number;
+  recepients: string[];
+  message: string;
+  // sent: number;
+  // delivered: number;
+  // failed: number;
   date: string;
-  status: string;
+  // status: string;
 }
 
 const formatDate = (dateString: string) => {
@@ -45,13 +47,16 @@ export default function BlastDashboardClient({ user }: { user: any }) {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/blast-messages/${userEmail}`);
         const blastData = response.data.map((blast: any) => ({
           title: blast.title,
-          sent: blast.sent,
-          delivered: blast.delivered,
-          failed: blast.failed,
-          date: formatDate(blast.scheduledAt), 
-          status: blast.status,
+          // sent: blast.sent,
+          // delivered: blast.delivered,
+          // failed: blast.failed,
+          date: formatDate(blast.createdAt),
+          recepients: blast.contacts,
+          message: blast.content,
+          // status: blast.status,
         }));
         setBlasts(blastData);
+        console.log("response: ", response.data);
       } catch (error) {
         console.error("❌ Error fetching Blast Dashboard data:", error);
       }
@@ -69,7 +74,7 @@ export default function BlastDashboardClient({ user }: { user: any }) {
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards userEmail={user.email} />
+              {/* <SectionCards userEmail={user.email} /> */}
               <div className="p-6 space-y-6">
                 <Card>
                   <CardHeader>
@@ -77,11 +82,13 @@ export default function BlastDashboardClient({ user }: { user: any }) {
                   </CardHeader>
                   <CardContent className="overflow-x-auto">
                     <BlastHistoryTable
-                      data={blasts.map(({ title, sent, delivered, failed, date }) => ({
+                      data={blasts.map(({ title, recepients, message, date }) => ({
                         title,
-                        sent,
-                        delivered,
-                        failed,
+                        recepients,
+                        message,
+                        // sent,
+                        // delivered,
+                        // failed,
                         date,
                       }))}
                     />
