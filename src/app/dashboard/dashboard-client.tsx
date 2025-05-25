@@ -42,6 +42,7 @@ const iconMap = {
   MessageSquare: <MessageSquare className="text-indigo-500 w-4 h-4" />,
   CheckCircle2: <CheckCircle2 className="text-teal-500 w-4 h-4" />,
   Trash2: <XCircle className="text-red-500 w-4 h-4" />, // Assuming trash2 is a typo for XCircle
+  MessageCircle: <MessageSquare className="text-indigo-500 w-4 h-4" />, // Assuming MessageCircle is similar to MessageSquare
 };
 
 const formatDate = (dateString: string) => {
