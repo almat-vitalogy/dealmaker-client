@@ -7,6 +7,11 @@ import { DayPicker } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
+interface IconProps {
+  className?: string;
+  [key: string]: any;
+}
+
 function Calendar({ className, classNames, showOutsideDays = true, ...props }: React.ComponentProps<typeof DayPicker>) {
   return (
     <DayPicker
@@ -44,8 +49,25 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: R
         ...classNames,
       }}
       components={{
-        IconLeft: ({ className, ...props }) => <ChevronLeft className={cn("size-4", className)} {...props} />,
-        IconRight: ({ className, ...props }) => <ChevronRight className={cn("size-4", className)} {...props} />,
+        Chevron: ({
+          orientation,
+          className,
+          ...props
+        }: {
+          className?: string;
+          size?: number;
+          disabled?: boolean;
+          orientation?: "left" | "right" | "up" | "down";
+        }) => {
+          if (orientation === "left") {
+            return <ChevronLeft className={cn("size-4", className)} {...props} />;
+          }
+          if (orientation === "right") {
+            return <ChevronRight className={cn("size-4", className)} {...props} />;
+          }
+          // Default to right chevron for undefined or other orientations
+          return <ChevronRight className={cn("size-4", className)} {...props} />;
+        },
       }}
       {...props}
     />

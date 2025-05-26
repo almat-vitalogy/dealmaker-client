@@ -17,7 +17,7 @@ interface RecentBlast {
   sent: number;
   delivered: number;
   failed: number;
-  scheduledAt: string;
+  createdAt: string;
 }
 
 interface RecentActivity {
@@ -41,6 +41,8 @@ const iconMap = {
   PlusCircle: <PlusCircle className="text-purple-500 w-4 h-4" />,
   MessageSquare: <MessageSquare className="text-indigo-500 w-4 h-4" />,
   CheckCircle2: <CheckCircle2 className="text-teal-500 w-4 h-4" />,
+  Trash2: <XCircle className="text-red-500 w-4 h-4" />, // Assuming trash2 is a typo for XCircle
+  MessageCircle: <MessageSquare className="text-indigo-500 w-4 h-4" />, // Assuming MessageCircle is similar to MessageSquare
 };
 
 const formatDate = (dateString: string) => {
@@ -51,8 +53,10 @@ const formatDate = (dateString: string) => {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-    timeZone: "Asia/Hong_Kong",
-  }).format(new Date(dateString)).replace(/\//g, "-");
+    // timeZone: "Asia/Hong_Kong",
+  })
+    .format(new Date(dateString))
+    .replace(/\//g, "-");
 };
 
 export default function DashboardClient({ user }: { user: any }) {
@@ -100,12 +104,12 @@ export default function DashboardClient({ user }: { user: any }) {
                       <RefreshCw size={14} className="ml-1" />
                     </Button>
                   </CardHeader>
-                  <CardContent className="max-h-40 overflow-auto">
+                  <CardContent className="max-h-45 overflow-auto">
                     {dashboardData?.recentBlasts.map((blast, i) => (
                       <div key={i} className="flex justify-between border-b py-1">
                         <span>{blast.title}</span>
                         <span className="text-muted-foreground">
-                          {blast.status} • {blast.sent}/{blast.failed}
+                          {blast.status} {formatDate(blast.createdAt)}
                         </span>
                       </div>
                     ))}
@@ -125,9 +129,7 @@ export default function DashboardClient({ user }: { user: any }) {
                       <div key={i} className="flex items-center space-x-2">
                         {iconMap[activity.icon]}
                         <span>{activity.description}</span>
-                        <span className="ml-auto text-xs text-muted-foreground">
-                          {formatDate(activity.timestamp)}
-                        </span>
+                        <span className="ml-auto text-xs text-muted-foreground">{formatDate(activity.timestamp)}</span>
                       </div>
                     ))}
                   </CardContent>

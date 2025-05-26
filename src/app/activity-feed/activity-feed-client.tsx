@@ -21,6 +21,7 @@ const iconMap: Record<string, JSX.Element> = {
   PlusCircle: <PlusCircle className="text-purple-500 w-5 h-5" />,
   RefreshCcw: <RefreshCcw className="text-blue-500 w-5 h-5" />,
   XCircle: <XCircle className="text-red-500 w-5 h-5" />,
+  trash2: <XCircle className="text-red-500 w-5 h-5" />, // Assuming trash2 is a typo for XCircle
 };
 
 const formatDate = (dateString: string) => {
@@ -41,7 +42,6 @@ const formatDate = (dateString: string) => {
     .replace(",", "");
 };
 
-
 export default function ActivityFeedClient({ user }: { user: any }) {
   const [activityFeed, setActivities] = useState<ActivityItem[]>([]);
 
@@ -50,6 +50,7 @@ export default function ActivityFeedClient({ user }: { user: any }) {
       const userEmail = encodeURIComponent(user.email);
       try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/activities/${userEmail}`);
+        console.log("📊 Activity Feed data:", response.data);
 
         const recentActivities = response.data.map((item: any) => ({
           icon: mapActionToIcon(item.action),
@@ -65,20 +66,22 @@ export default function ActivityFeedClient({ user }: { user: any }) {
 
     fetchActivityFeed();
   }, [user.email]);
-  
-  const mapActionToIcon = (action: string): string => {
+
+  function mapActionToIcon(action: string): string {
     const iconMapping: Record<string, string> = {
       "contacts scraped": "CheckCircle2",
       "contact added": "PlusCircle",
+      "contact deleted": "XCircle",
       "blast created": "MessageSquare",
       "blast sent": "CheckCircle",
       "session connected": "RefreshCcw",
       "session disconnected": "XCircle",
+      "message composed": "MessageCircle",
       error: "XCircle",
     };
 
-    return iconMapping[action] || "MessageSquare";
-  };
+    return iconMapping[action] || "Clock";
+  }
 
   return (
     <SidebarProvider
@@ -100,15 +103,11 @@ export default function ActivityFeedClient({ user }: { user: any }) {
             <CardContent className="space-y-6">
               {activityFeed.map((item, index) => (
                 <div key={index} className="flex items-start gap-4">
-                  <div className="rounded-full">
-                    {iconMap[item.icon] || <MessageSquare className="text-indigo-500 w-5 h-5" />}
-                  </div>
+                  <div className="rounded-full">{iconMap[item.icon] || <MessageSquare className="text-indigo-500 w-5 h-5" />}</div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">{item.description}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {formatDate(item.updatedAt)}
-                  </span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(item.updatedAt)}</span>
                 </div>
               ))}
             </CardContent>

@@ -12,17 +12,10 @@ interface ContactsStepProps {
 
 const ContactsStep = ({ user }: ContactsStepProps) => {
   const userEmail = encodeURIComponent(user?.email || "");
+  const userEmail2 = user?.email || "";
 
-  const {
-    contacts,
-    selectContact,
-    selectedContacts,
-    scrapeContacts,
-    contactStatus,
-    setContacts,
-    addContactToDB,
-    deleteContactFromDB,
-  } = useBlastStore();
+  const { contacts, selectContact, selectedContacts, scrapeContacts, contactStatus, setContacts, addContactToDB, deleteContactFromDB } =
+    useBlastStore();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -45,7 +38,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
   const handleDelete = (name: string, phone: string) => {
     const confirmed = window.confirm(`Are you sure you want to delete ${name || phone}?`);
     if (confirmed) {
-      deleteContactFromDB(userEmail, phone);
+      deleteContactFromDB(userEmail, phone, userEmail2);
       alert(`${name || phone} has been deleted!`);
     }
   };
@@ -53,27 +46,26 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
   return (
     <div className="-mt-6">
       <Card className="w-full border-none shadow-none">
-        <CardHeader>
+        {/* <CardHeader>
           <CardTitle>Import Contacts</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
           <Button className="w-full">Upload CSV, Excel, or Google Sheets</Button>
-        </CardContent>
-
+        </CardContent> */}
+        {/* <div className=""></div> */}
+        <CardHeader>
+          <CardTitle className="mx-auto">1. Select who is going to receive your blast</CardTitle>
+        </CardHeader>
         <CardHeader>
           <CardTitle>Scrape Contacts</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
-          <Button className="w-full" onClick={scrapeContacts}>
+          <Button className="w-full" onClick={() => scrapeContacts(userEmail2)}>
             {!contactStatus && <Send className="mr-2" size={16} />}
             {contactStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
             {contactStatus === "success" && <CheckCircle className="mr-2" size={16} />}
             {contactStatus === "error" && <XCircle className="mr-2" size={16} />}
-            {contactStatus === "loading"
-              ? "Scraping..."
-              : contactStatus === "success"
-              ? "Scraped"
-              : "Scrape contacts from WhatsApp (connect first)"}
+            {contactStatus === "loading" ? "Scraping..." : contactStatus === "success" ? "Scraped" : "Scrape contacts from WhatsApp (connect first)"}
           </Button>
         </CardContent>
 
@@ -83,22 +75,12 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
         <CardContent className="-mt-5">
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-6">
-              <Input
-                className="text-black"
-                placeholder="Name (John Doe)"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <Input
-                className="text-black"
-                placeholder="Phone Number (85291234567)"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
+              <Input className="text-black" placeholder="Name (John Doe)" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input className="text-black" placeholder="Phone Number (85291234567)" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
             <Button
               onClick={() => {
-                addContactToDB(userEmail, name, phone);
+                addContactToDB(userEmail, name, phone, userEmail2);
                 setName("");
                 setPhone("");
               }}
@@ -129,11 +111,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
                 </div>
                 <span className="text-muted-foreground flex items-center gap-2">
                   {contact.phone}
-                  <XCircle
-                    className="cursor-pointer hover:text-red-500"
-                    size={16}
-                    onClick={() => handleDelete(contact.name, contact.phone)}
-                  />
+                  <XCircle className="cursor-pointer hover:text-red-500" size={16} onClick={() => handleDelete(contact.name, contact.phone)} />
                 </span>
               </div>
             ))}

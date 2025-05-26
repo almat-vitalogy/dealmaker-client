@@ -5,13 +5,18 @@ import { Input } from "@/components/ui/input";
 import { useBlastStore } from "@/store/blast";
 import { Send, Loader2, CheckCircle, XCircle } from "lucide-react";
 
-const MessageStep = () => {
+const MessageStep = ({ user }: any) => {
   const { message, setMessage, composeMessage, composeMessageStatus } = useBlastStore();
   const [theme, setTheme] = useState("");
-  const [title, setTitle] = useState("");
+  const { title, setTitle } = useBlastStore();
+  const userEmail = user?.email || "";
+
   return (
     <div className="-mt-6">
       <Card className="border-none shadow-none">
+        <CardHeader>
+          <CardTitle className="mx-auto">2. Write a message you want to blast or generate it using AI</CardTitle>
+        </CardHeader>
         <CardHeader>
           <CardTitle>Title</CardTitle>
         </CardHeader>
@@ -38,7 +43,7 @@ const MessageStep = () => {
                 onChange={(e) => setTheme(e.target.value)}
               />
             </div>
-            <Button className="w-full" onClick={() => composeMessage(theme)}>
+            <Button className="w-full" onClick={() => composeMessage(theme, userEmail)}>
               {!composeMessageStatus && <Send className="mr-2" size={16} />}
               {composeMessageStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
               {composeMessageStatus === "success" && <CheckCircle className="mr-2" size={16} />}
@@ -60,9 +65,9 @@ const MessageStep = () => {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
-            <div className="flex w-full">
+            {/* <div className="flex w-full">
               <Button className="w-full">Save Blast</Button>
-            </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>

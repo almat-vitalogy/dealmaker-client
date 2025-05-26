@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { signUp } from "@/lib/actions";
 import { Icons } from "../icons";
+import SignInSocial from "./sign-in-social"; // Reuse the same component as LoginForm
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
@@ -34,14 +35,10 @@ export default function SignupForm() {
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-3">
-          <Button type="button" variant="outline">
+          <SignInSocial provider="google">
             <Icons.google />
             <span>Google</span>
-          </Button>
-          {/* <Button type="button" variant="outline">
-            <Icons.gitHub />
-            <span>Github</span>
-          </Button> */}
+          </SignInSocial>
         </div>
 
         <hr className="my-4 border-dashed" />

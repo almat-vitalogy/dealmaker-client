@@ -15,6 +15,7 @@ export default function WebControllerClient({ user }: { user: any }) {
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const { connectUser, qrCodeUrl, disconnectUser, connectionStatus } = useBlastStore();
+  const userEmail = user?.email || "";
 
   useEffect(() => {
     if (!carouselApi) return;
@@ -68,8 +69,8 @@ export default function WebControllerClient({ user }: { user: any }) {
                               ${connectionStatus === "Connect" ? "bg-green-200" : ""}
                             `}
                     onClick={() => {
-                      if (connectionStatus === "Connect") connectUser();
-                      else disconnectUser();
+                      if (connectionStatus === "Connect") connectUser(userEmail);
+                      else disconnectUser(userEmail);
                     }}
                     disabled={connectionStatus === "Loading..."}
                   >
@@ -119,10 +120,9 @@ export default function WebControllerClient({ user }: { user: any }) {
               </CardContent>
             </Card>
           </div>
-
           <Card className="relative p-6">
             <CardHeader className="text-center text-lg">
-              <CardTitle>Send Message</CardTitle>
+              <CardTitle>Send a new Blast</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Carousel className="h-[700px]" setApi={setCarouselApi}>
@@ -131,10 +131,10 @@ export default function WebControllerClient({ user }: { user: any }) {
                     <ContactsStep user={user} />
                   </CarouselItem>
                   <CarouselItem>
-                    <MessageStep />
+                    <MessageStep user={user} />
                   </CarouselItem>
                   <CarouselItem>
-                    <ScheduleStep />
+                    <ScheduleStep user={user} />
                   </CarouselItem>
                 </CarouselContent>
                 <CarouselPrevious />
@@ -147,6 +147,17 @@ export default function WebControllerClient({ user }: { user: any }) {
               </div>
             </CardContent>
           </Card>
+
+          {/* <Card className="relative p-6">
+            <CardHeader className="text-center text-lg">
+              <CardTitle>Send existing Blast</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ContactsStep />
+              
+              <ScheduleStep />
+            </CardContent>
+          </Card> */}
         </div>
       </SidebarInset>
     </SidebarProvider>
