@@ -60,11 +60,11 @@ export default function LoginForm() {
               <Label htmlFor="pwd" className="text-title text-sm">
                 Password
               </Label>
-              <Button asChild variant="link" size="sm">
+              {/* <Button asChild variant="link" size="sm">
                 <Link href="/login/forgot-account" className="link intent-info variant-ghost text-sm">
                   Forgot your Account ?
                 </Link>
-              </Button>
+              </Button> */}
             </div>
             <Input type="password" required name="pwd" id="pwd" className="input sz-md variant-mixed" />
           </div>
