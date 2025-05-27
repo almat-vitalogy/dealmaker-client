@@ -15,6 +15,7 @@ import {
   IconSettings,
   IconDeviceMobile,
   IconActivity,
+  IconAddressBook,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -35,10 +36,16 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Web Controller",
-      url: "/web-controller",
+      title: "Blast Message",
+      url: "/blast-message",
       // icon: IconListDetails,
       icon: IconDeviceMobile,
+    },
+    {
+      title: "Contacts",
+      url: "/contacts",
+      // icon: IconListDetails,
+      icon: IconAddressBook,
     },
     {
       title: "Blast Dashboard",

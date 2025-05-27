@@ -43,16 +43,29 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
     }
   };
 
+  const areAllSelected = contacts.length > 0 && contacts.every((c) => selectedContacts.includes(c.phone));
+
+  const toggleSelectAll = () => {
+    if (areAllSelected) {
+      // Deselect all
+      contacts.forEach((c) => {
+        if (selectedContacts.includes(c.phone)) {
+          selectContact(c.phone);
+        }
+      });
+    } else {
+      // Select all
+      contacts.forEach((c) => {
+        if (!selectedContacts.includes(c.phone)) {
+          selectContact(c.phone);
+        }
+      });
+    }
+  };
+
   return (
     <div className="-mt-6">
-      <Card className="w-full border-none shadow-none">
-        {/* <CardHeader>
-          <CardTitle>Import Contacts</CardTitle>
-        </CardHeader>
-        <CardContent className="-mt-5">
-          <Button className="w-full">Upload CSV, Excel, or Google Sheets</Button>
-        </CardContent> */}
-        {/* <div className=""></div> */}
+      {/* <Card className="w-full border-none shadow-none">
         <CardHeader>
           <CardTitle className="mx-auto">1. Select who is going to receive your blast</CardTitle>
         </CardHeader>
@@ -90,12 +103,19 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
             </Button>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       <Card className="border-none shadow-none">
         <CardHeader>
-          <CardTitle>{`Contact List (${contacts ? contacts.length : 0})`}</CardTitle>
+          <CardTitle className="mx-auto">1. Select who is going to receive your blast</CardTitle>
         </CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{`Contact List (${contacts ? contacts.length : 0})`}</CardTitle>
+          <Button variant="outline" size="sm" onClick={toggleSelectAll} disabled={contacts.length === 0}>
+            {areAllSelected ? "Deselect All" : "Select All"}
+          </Button>
+        </CardHeader>
+
         <CardContent>
           <div className="space-y-3 max-h-[250px] overflow-y-auto">
             {(contacts || []).map((contact, index) => (
