@@ -3,8 +3,10 @@
 import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Icons } from "../icons";
+import { useBlastStore } from "@/store/blast";
 
 export default function SignOutButton() {
+  const { clearStorage } = useBlastStore();
   const router = useRouter();
   const handleClick = async () => {
     await signOut({
