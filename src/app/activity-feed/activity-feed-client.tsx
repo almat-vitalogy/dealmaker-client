@@ -27,20 +27,7 @@ const iconMap: Record<string, JSX.Element> = {
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "Invalid date";
-
-  return new Intl.DateTimeFormat("en-GB", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Asia/Hong_Kong",
-  })
-    .format(date)
-    .replace(/\//g, "-")
-    .replace(",", "");
+  return date.toISOString().replace("T", ", ").substring(0, 17); // "2025-05-28, 10:16"
 };
 
 export default function ActivityFeedClient({ user }: { user: any }) {
