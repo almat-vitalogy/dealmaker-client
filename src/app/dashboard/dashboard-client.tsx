@@ -313,7 +313,7 @@ export default function DashboardClient({ user }: { user: any }) {
                     <div className="flex items-center gap-3">
                       <RefreshCcw className="w-5 h-5 mt-1" />
                       <p className="flex-1">
-                        4. Once connected, <strong>do not reconnect unless</strong> "Check Connection" does not send the message.
+                        4. Once connected, <strong>do not reconnect unless</strong> &quot;Check Connection&quot; does not send the message.
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
