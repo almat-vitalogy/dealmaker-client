@@ -7,6 +7,10 @@ import { sendEmail } from "./email";
 const client = new MongoClient("mongodb+srv://jasmine:xxbjyP0RMNrOf2eS@dealmaker.hbhznd5.mongodb.net/?retryWrites=true&w=majority&appName=dealmaker");
 export const db = client.db("dealmaker");
 
+// DEBUG LOGS FOR ENV VARIABLES
+console.log("🔍 GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
+console.log("🔍 GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET);
+
 export const auth = betterAuth({
   database: mongodbAdapter(db),
   emailAndPassword: {

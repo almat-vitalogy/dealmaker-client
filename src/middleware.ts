@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
   const { data: session } = await betterFetch<Session>("/api/auth/get-session", {
     baseURL: "https://dealmaker.turoid.ai",
     headers: {
-      cookie: request.headers.get("cookie") || "", // Forward the cookies from the request
+      cookie: request.headers.get("cookie") || "",
     },
   })
 
