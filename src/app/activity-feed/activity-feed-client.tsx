@@ -7,6 +7,7 @@ import axios from "axios";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import React, { JSX, useEffect, useState } from "react";
+import { useClearLoadingOnRouteChange } from "@/hooks/useClearLoadingOnRouteChange";
 
 interface ActivityItem {
   icon: string;
@@ -44,6 +45,7 @@ const formatDate = (dateString: string) => {
 
 export default function ActivityFeedClient({ user }: { user: any }) {
   const [activityFeed, setActivities] = useState<ActivityItem[]>([]);
+  useClearLoadingOnRouteChange();
 
   useEffect(() => {
     const fetchActivityFeed = async () => {

@@ -1,73 +1,75 @@
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useBlastStore } from "@/store/blast";
-import { Send, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Sparkles, Loader2, CheckCircle, XCircle } from "lucide-react";
 
 const MessageStep = ({ user }: any) => {
-  const { message, setMessage, composeMessage, composeMessageStatus } = useBlastStore();
-  const [theme, setTheme] = useState("");
-  const { title, setTitle } = useBlastStore();
+  const { message, setMessage, composeMessage, composeMessageStatus, title, setTitle } = useBlastStore();
+
   const userEmail = user?.email || "";
+
+  const handleRewrite = async () => {
+    if (!message.trim()) return;
+    await composeMessage(message, userEmail);
+  };
 
   return (
     <div className="-mt-6">
       <Card className="border-none shadow-none">
         <CardHeader>
-          <CardTitle className="mx-auto">2. Write a message you want to blast or generate it using AI</CardTitle>
+          <CardTitle className="mx-auto">2. Write a message you want to blast or rewrite using AI</CardTitle>
         </CardHeader>
+
+        {/* Title Input */}
         <CardHeader>
           <CardTitle>Title</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
           <div className="space-y-4">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium mb-1 text-muted-foreground"></label>
-              <Input id="title" placeholder="Give a title to this blast" value={title} onChange={(e) => setTitle(e.target.value)} />
-            </div>
+            <Input id="title" placeholder="Give a title to this blast" value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
         </CardContent>
 
-        <CardHeader>
-          <CardTitle>AI Message Generator</CardTitle>
-        </CardHeader>
-        <CardContent className="-mt-5">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="theme" className="block text-sm font-medium mb-1 text-muted-foreground"></label>
-              <Input
-                id="theme"
-                placeholder="Message Theme (Birthday greeting, Promo reminder)"
-                value={theme}
-                onChange={(e) => setTheme(e.target.value)}
-              />
-            </div>
-            <Button className="w-full" onClick={() => composeMessage(theme, userEmail)}>
-              {!composeMessageStatus && <Send className="mr-2" size={16} />}
-              {composeMessageStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
-              {composeMessageStatus === "success" && <CheckCircle className="mr-2" size={16} />}
-              {composeMessageStatus === "error" && <XCircle className="mr-2" size={16} />}
-              {composeMessageStatus === "loading" ? "Generating..." : composeMessageStatus === "success" ? "Generated" : "Generate Message"}
-            </Button>
-          </div>
-        </CardContent>
-
-        {/* <div className="mb-5"></div> */}
+        {/* Message Editor */}
         <CardHeader>
           <CardTitle>Message Editor</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
-          <div className="space-y-4 max-h-[440px] overflow-y-auto">
+          <div className="relative space-y-2 max-h-[440px]">
             <textarea
-              className="w-full h-32 p-3 border rounded-md"
-              placeholder="Generated or custom message will appear here..."
+              className="w-full h-48 p-3 pr-28 border rounded-md resize-none"
+              placeholder="Type your message here, or use AI to rewrite it..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
-            {/* <div className="flex w-full">
-              <Button className="w-full">Save Blast</Button>
-            </div> */}
+
+            <div className="absolute bottom-8 left-3">
+              <Button variant="outline" size="sm" onClick={handleRewrite} disabled={composeMessageStatus === "loading"}>
+                {composeMessageStatus === "loading" ? (
+                  <>
+                    <Loader2 className="mr-2 animate-spin w-4 h-4" />
+                    Rewriting...
+                  </>
+                ) : composeMessageStatus === "success" ? (
+                  <>
+                    <CheckCircle className="mr-2 w-4 h-4" />
+                    Rewritten
+                  </>
+                ) : composeMessageStatus === "error" ? (
+                  <>
+                    <XCircle className="mr-2 w-4 h-4" />
+                    Retry
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 w-4 h-4" />
+                    Rewrite with AI
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

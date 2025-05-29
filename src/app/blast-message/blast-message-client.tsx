@@ -10,12 +10,14 @@ import { useBlastStore } from "@/store/blast";
 import ContactsStep from "@/components/whatsapp/ContactsStep";
 import MessageStep from "@/components/whatsapp/MessageStep";
 import ScheduleStep from "@/components/whatsapp/ScheduleStep";
+import { useClearLoadingOnRouteChange } from "@/hooks/useClearLoadingOnRouteChange";
 
 export default function WebControllerClient({ user }: { user: any }) {
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const { connectUser, qrCodeUrl, disconnectUser, connectionStatus } = useBlastStore();
   const userEmail = user?.email || "";
+  useClearLoadingOnRouteChange();
 
   useEffect(() => {
     if (!carouselApi) return;
@@ -54,10 +56,9 @@ export default function WebControllerClient({ user }: { user: any }) {
     >
       <AppSidebar variant="inset" user={user} />
       <SidebarInset>
-        <SiteHeader left="Web Controller" right="" />
+        <SiteHeader left="Blast Message" right="" />
         <div className="p-6 space-y-6">
-          {/* Connection */}
-          <div className="w-full flex gap-6">
+          {/* <div className="w-full flex gap-6">
             <Card className="p-6 w-1/3">
               <CardHeader>
                 <CardTitle className="flex items-center justify-center">
@@ -90,7 +91,7 @@ export default function WebControllerClient({ user }: { user: any }) {
               </CardContent>
             </Card>
 
-            {/* Instruction Card */}
+
             <Card className="w-2/3 p-6">
               <CardHeader>
                 <h2 className="text-lg font-semibold text-gray-700">Important Notes</h2>
@@ -119,7 +120,8 @@ export default function WebControllerClient({ user }: { user: any }) {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </div> */}
+
           <Card className="relative p-6">
             <CardHeader className="text-center text-lg">
               <CardTitle>Send a new Blast</CardTitle>

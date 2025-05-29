@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BlastHistoryTable } from "@/components/ui/blast-history-table";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useClearLoadingOnRouteChange } from "@/hooks/useClearLoadingOnRouteChange";
 
 interface BlastItem {
   title: string;
@@ -39,6 +40,7 @@ const formatDate = (dateString: string) => {
 
 export default function BlastDashboardClient({ user }: { user: any }) {
   const [blasts, setBlasts] = useState<BlastItem[]>([]);
+  useClearLoadingOnRouteChange();
 
   useEffect(() => {
     const fetchBlasts = async () => {

@@ -1,10 +1,11 @@
 "use client";
 
 import { type Icon } from "@tabler/icons-react";
-
-// import { Button } from "@/components/ui/button";
-import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { useNavigationStore } from "@/store/navigation";
+import { Loader2 } from "lucide-react";
 
 export function NavMain({
   items,
@@ -15,39 +16,40 @@ export function NavMain({
     icon?: Icon;
   }[];
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { setLoadingToPath } = useNavigationStore();
+  const { loadingToPath } = useNavigationStore();
+
+  console.log(`NavMain: Current path: ${pathname}, Loading to path: ${loadingToPath}`);
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
-          {/* <SidebarMenuItem className="flex items-center gap-2">
-            <SidebarMenuButton
-              tooltip="Quick Create"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-            >
-              <IconCirclePlusFilled />
-              <span>Quick Create</span>
-            </SidebarMenuButton>
-            <Button
-              size="icon"
-              className="size-8 group-data-[collapsible=icon]:opacity-0"
-              variant="outline"
-            >
-              <IconMail />
-              <span className="sr-only">Inbox</span>
-            </Button>
-          </SidebarMenuItem> */}
-        </SidebarMenu>
-        <SidebarMenu>
-          {items.map((item, i) => (
-            <Link href={item.url} key={i}>
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton tooltip={item.title} size="lg" className="text-base">
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </Link>
-          ))}
+          {items.map((item, i) => {
+            return (
+              <Link
+                href={item.url}
+                key={i}
+                onClick={(e) => {
+                  if (pathname !== item.url) {
+                    e.preventDefault(); // stop default nav
+                    setLoadingToPath(item.url);
+                    router.push(item.url);
+                  }
+                }}
+              >
+                <SidebarMenuItem>
+                  <SidebarMenuButton size="lg" tooltip={item.title} isActive={pathname === item.url}>
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+
+                    {loadingToPath === item.url && <Loader2 className="ml-auto size-4 animate-spin text-muted-foreground" />}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </Link>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

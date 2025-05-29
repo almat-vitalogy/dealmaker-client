@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import WebControllerClient from "./web-controller-client";
+import WebControllerClient from "./blast-message-client";
 
 export default async function Page() {
   const session = await auth.api.getSession({
