@@ -5,10 +5,14 @@ import type { auth } from "@/lib/auth";
 type Session = typeof auth.$Infer.Session;
 
 export async function middleware(request: NextRequest) {
+  console.log("➡️  request.nextUrl.origin =", request.nextUrl.origin);
+
+  const baseURL = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://dealmaker.turoid.ai";
+
   const { data: session } = await betterFetch<Session>("/api/auth/get-session", {
-    baseURL: request.nextUrl.origin,
+    baseURL, // explicitly provide the baseURL
     headers: {
-      cookie: request.headers.get("cookie") || "", // Forward the cookies from the request
+      cookie: request.headers.get("cookie") || "",
     },
   });
 
@@ -20,5 +24,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard", "/activity-feed", "/blast-dashboard", "/web-controller"], // Apply middleware to specific routes
+  matcher: ["/dashboard", "/activity-feed", "/blast-dashboard", "/web-controller"],
 };
