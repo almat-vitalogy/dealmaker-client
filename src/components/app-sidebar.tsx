@@ -50,6 +50,11 @@ const data = {
       url: "/activity-feed",
       icon: IconActivity,
     },
+    {
+      title: "Subscriptions",
+      url: "/subscriptions",
+      icon: IconFileDescription,  // you can change this icon as preferred
+    },
   ],
   navClouds: [
     {
