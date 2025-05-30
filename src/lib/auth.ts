@@ -8,8 +8,8 @@ const client = new MongoClient("mongodb+srv://jasmine:xxbjyP0RMNrOf2eS@dealmaker
 export const db = client.db("dealmaker");
 
 // DEBUG LOGS FOR ENV VARIABLES
-console.log("🔍 GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
-console.log("🔍 GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET);
+// console.log("🔍 GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID );
+// console.log("🔍 GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET);
 
 export const auth = betterAuth({
   database: mongodbAdapter(db),
@@ -52,7 +52,7 @@ export const auth = betterAuth({
     //   clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
     // },
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientId: process.env.GOOGLE_CLIENT_ID  as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
   },

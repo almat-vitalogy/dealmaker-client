@@ -1,4 +1,9 @@
+/* client/src/app/subscriptions/subscriptions-client.tsx */
+
 "use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -8,98 +13,177 @@ import SubscriptionHistory from "@/components/SubscriptionHistory";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, Settings } from "lucide-react";
-import React, { useState } from "react";
+
 import { useToast } from "@/hooks/use-toast";
 import { useClearLoadingOnRouteChange } from "@/hooks/useClearLoadingOnRouteChange";
 
-// MOCK DATA
-const getDiscountedPrice = (monthlyPrice: number) => Math.round(monthlyPrice * 12 * 0.7);
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                           */
+/* ------------------------------------------------------------------ */
+
+const getDiscountedPrice = (m: number) => Math.round(m * 12 * 0.7);
+
+/** map Stripe priceId → plan title (extend when you add more plans) */
+const priceIdToPlan: Record<string, string> = {
+  "price_1RU4CrDlkgrFyQgUESMdh6o6": "Pro Plan",
+  "price_1RU4EbDlkgrFyQgUHILLc7IQ": "Pro Plan (Yearly)",
+  "price_1RU4FUDlkgrFyQgUgHth5GjP": "Enterprise Plan",
+  "price_1RU4FpDlkgrFyQgUNl8anlpL": "Enterprise Plan (Yearly)",
+};
+
+const formatAmount = (
+  raw: number | null,
+  currency = "",
+  isCents = false
+): string =>
+  raw != null
+    ? `${(isCents ? raw / 100 : raw).toFixed(2)} ${currency.toUpperCase()}`.trim()
+    : "–";
+
+type Transaction = {
+  id: string;
+  date: string;
+  plan: string;
+  amount: string;
+  status: "completed" | "failed" | "pending";
+};
+
+/* ------------------------------------------------------------------ */
+/*  Constant plan definitions (used by the UI cards)                  */
+/* ------------------------------------------------------------------ */
 
 const plans = [
   {
-    id: 'free',
-    title: 'Free Plan',
-    price: 'Free',
-    currency: '',
-    yearlyPrice: 'Free',
-    description: 'Perfect for getting started with basic blast messaging',
-    features: [
-      '100 blast messages per month',
-      '10 AI message generation per month'
-    ],
+    id: "free",
+    title: "Free Plan",
+    price: "Free",
+    currency: "",
+    yearlyPrice: "Free",
+    description: "Perfect for getting started with basic blast messaging",
+    features: ["100 blast messages per month", "10 AI message generation per month"],
     stripePriceIdMonthly: null,
     stripePriceIdYearly: null,
   },
   {
-    id: 'pro',
-    title: 'Pro Plan',
-    price: '99',
-    currency: 'HKD',
+    id: "pro",
+    title: "Pro Plan",
+    price: "99",
+    currency: "HKD",
     yearlyPrice: getDiscountedPrice(99).toString(),
-    description: 'Ideal for growing businesses with higher volume needs',
+    description: "Ideal for growing businesses with higher volume needs",
     features: [
-      '1,000 blast messages per month',
-      '200 AI message generation per month',
-      'Crawl contacts from WhatsApp group',
-      'Reuse custom templates'
+      "1,000 blast messages per month",
+      "200 AI message generation per month",
+      "Crawl contacts from WhatsApp group",
+      "Reuse custom templates",
     ],
     isPopular: true,
-    stripePriceIdMonthly: 'price_1RU4CrDlkgrFyQgUESMdh6o6',   // <-- replace with your Stripe price ID
-    stripePriceIdYearly: 'price_1RU4EbDlkgrFyQgUHILLc7IQ',     // <-- replace with your Stripe price ID
+    stripePriceIdMonthly: "price_1RU4CrDlkgrFyQgUESMdh6o6",
+    stripePriceIdYearly: "price_1RU4EbDlkgrFyQgUHILLc7IQ",
   },
   {
-    id: 'enterprise',
-    title: 'Enterprise Plan',
-    price: '199',
-    currency: 'HKD',
+    id: "enterprise",
+    title: "Enterprise Plan",
+    price: "199",
+    currency: "HKD",
     yearlyPrice: getDiscountedPrice(199).toString(),
-    description: 'For businesses that need unlimited messaging power',
+    description: "For businesses that need unlimited messaging power",
     features: [
-      'Unlimited blast messages',
-      'Unlimited AI message generation',
-      'Crawl contacts from WhatsApp group',
-      'Reuse custom templates',
-      'Dedicated account manager'
+      "Unlimited blast messages",
+      "Unlimited AI message generation",
+      "Crawl contacts from WhatsApp group",
+      "Reuse custom templates",
+      "Dedicated account manager",
     ],
-    stripePriceIdMonthly: 'price_1RU4FUDlkgrFyQgUgHth5GjP',   // <-- replace with your Stripe price ID
-    stripePriceIdYearly: 'price_1RU4FpDlkgrFyQgUNl8anlpL',     // <-- replace with your Stripe price ID
-  }
+    stripePriceIdMonthly: "price_1RU4FUDlkgrFyQgUgHth5GjP",
+    stripePriceIdYearly: "price_1RU4FpDlkgrFyQgUNl8anlpL",
+  },
 ];
 
-const mockTransactions = [
-  {
-    id: '1',
-    date: '28-05-2025, 19:06',
-    plan: 'Pro Plan',
-    amount: '99 HKD',
-    status: 'completed' as const
-  },
-  {
-    id: '2',
-    date: '28-04-2025, 19:06',
-    plan: 'Pro Plan',
-    amount: '99 HKD',
-    status: 'completed' as const
-  }
-];
+/* ------------------------------------------------------------------ */
+/*  Component                                                         */
+/* ------------------------------------------------------------------ */
 
 export default function SubscriptionsClient({ user }: { user: any }) {
-  const [activeTab, setActiveTab] = useState('plans');
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [currentPlan, setCurrentPlan] = useState('free'); // mock current plan
   const { toast } = useToast();
   useClearLoadingOnRouteChange();
+  const searchParams = useSearchParams();
 
-  const mockCurrentPlan = currentPlan !== 'free' ? {
-    name: plans.find(p => p.id === currentPlan)?.title || 'Pro Plan',
-    price: '99 HKD',
-    nextBilling: '28-06-2025',
-    status: 'active'
-  } : undefined;
+  /* ----- UI state ---------------------------------------------------- */
+  const [activeTab, setActiveTab] = useState<"plans" | "history">("plans");
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [currentPlan, setCurrentPlan] = useState("free"); // ← replace when you have a “current subscription” endpoint
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
+  /* ----- choose tab on first load ----------------------------------- */
+  useEffect(() => {
+    if (searchParams.get("tab") === "history" || searchParams.get("session_id")) {
+      setActiveTab("history");
+    }
+  }, [searchParams]);
+
+  /* ----- fetch billing history -------------------------------------- */
+  useEffect(() => {
+    if (!user?.email) return;
+
+    const load = async () => {
+      try {
+        setHistoryLoading(true);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/subscriptions/${encodeURIComponent(
+            user.email
+          )}`
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+
+        const mapped: Transaction[] = (json.subscriptionEvents || []).map(
+          (evt: any): Transaction => ({
+            id   : evt.invoiceId || evt.eventId,
+            date : new Date(evt.createdAt || evt.periodEnd || Date.now())
+              .toLocaleString("en-GB", { hour12: false }),
+            plan : priceIdToPlan[evt.lineItems?.[0]?.priceId] || "Subscription",
+            amount: formatAmount(evt.amountPaid, evt.currency),
+            status: evt.status === "paid" ? "completed" : "pending",
+            /** 🔥 NEW: pass hosted invoice link to the component */
+            invoiceUrl: evt.hostedInvoiceUrl ?? undefined,
+          })
+        );
+
+        setTransactions(mapped);
+      } catch (err: any) {
+        console.error("[BillingHistory] load error:", err);
+        toast({
+          title: "Could not load billing history",
+          description: err.message ?? "Unknown error",
+          variant: "destructive",
+        });
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+
+    load();
+  }, [user?.email, toast]);
+  /* ----- helpers ----------------------------------------------------- */
+  const mockCurrentPlan = useMemo(
+    () =>
+      currentPlan !== "free"
+        ? {
+            name: plans.find((p) => p.id === currentPlan)?.title || "Pro Plan",
+            price: "99 HKD",
+            nextBilling: "28-06-2025",
+            status: "active",
+          }
+        : undefined,
+    [currentPlan]
+  );
+
+  /* ----- subscribe handler ------------------------------------------ */
   const handleSubscribe = async (planId: string) => {
-    if (planId === 'free') {
+    if (planId === "free") {
       toast({
         title: "Free Plan Selected",
         description: "You're already on the free plan!",
@@ -108,31 +192,31 @@ export default function SubscriptionsClient({ user }: { user: any }) {
     }
     setLoadingPlan(planId);
     try {
-      const plan = plans.find(p => p.id === planId);
-      const priceId = billingPeriod === 'monthly' ? plan?.stripePriceIdMonthly : plan?.stripePriceIdYearly;
-
+      const plan = plans.find((p) => p.id === planId);
+      const priceId =
+        billingPeriod === "monthly" ? plan?.stripePriceIdMonthly : plan?.stripePriceIdYearly;
       if (!priceId) throw new Error("PriceId not found for this plan");
 
-      const response = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ priceId }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/stripe/create-checkout-session`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ priceId, userEmail: user?.email }),
+        }
+      );
 
       const data = await response.json();
       if (data.url) {
         window.location.href = data.url;
-        return;
       } else {
-        throw new Error("Failed to create checkout session");
+        throw new Error("Stripe did not return a redirect URL");
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Subscription Failed",
-        description: "There was an error processing your subscription. Please try again.",
-        variant: "destructive"
+        description: error.message ?? "Unknown error",
+        variant: "destructive",
       });
     } finally {
       setLoadingPlan(null);
@@ -144,31 +228,43 @@ export default function SubscriptionsClient({ user }: { user: any }) {
       title: "Opening Billing Portal",
       description: "Redirecting to Stripe billing portal...",
     });
-    // Stripe customer portal redirect goes here
+    // TODO: redirect to your customer-portal endpoint
   };
 
+  /* ------------------------------------------------------------------ */
+  /*  Render                                                            */
+  /* ------------------------------------------------------------------ */
+
   return (
-    <SidebarProvider style={{
-      "--sidebar-width": "calc(var(--spacing) * 72)",
-      "--header-height": "calc(var(--spacing) * 12)"
-    } as React.CSSProperties}>
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
       <AppSidebar variant="inset" user={user} />
       <SidebarInset>
         <SiteHeader left="Subscriptions" right="" />
+
         <div className="p-8">
-          {/* Header */}
+          {/* ------------------------------------------------ Plans / History Tabs ----- */}
           <div className="bg-white border-b border-gray-200 px-8 py-6">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-semibold text-gray-900">Subscriptions</h1>
-                <p className="text-gray-600 mt-1">Manage your subscription plans and billing</p>
+                <p className="text-gray-600 mt-1">
+                  Manage your subscription plans and billing
+                </p>
               </div>
+
               <div className="flex items-center space-x-3">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Refresh
                 </Button>
-                {currentPlan !== 'free' && (
+                {currentPlan !== "free" && (
                   <Button variant="outline" size="sm" onClick={handleManageSubscription}>
                     <Settings className="w-4 h-4 mr-2" />
                     Manage Billing
@@ -178,37 +274,40 @@ export default function SubscriptionsClient({ user }: { user: any }) {
             </div>
           </div>
 
-          {/* Tab Navigation */}
+          {/* --------------- Tab navigation ---------------- */}
           <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-8 w-fit">
             <button
-              onClick={() => setActiveTab('plans')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'plans'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-                }`}
+              onClick={() => setActiveTab("plans")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "plans"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
             >
               Subscription Plans
             </button>
             <button
-              onClick={() => setActiveTab('history')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'history'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-                }`}
+              onClick={() => setActiveTab("history")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "history"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
             >
               Billing History
             </button>
           </div>
 
-          {activeTab === 'plans' && (
+          {/* ------------------ PLANS TAB ------------------ */}
+          {activeTab === "plans" && (
             <div>
-              {/* Current Plan Status */}
-              {currentPlan !== 'free' && (
+              {currentPlan !== "free" && (
                 <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-medium text-green-900">
-                        You're currently on the {plans.find(p => p.id === currentPlan)?.title}
+                        You&apos;re currently on the{" "}
+                        {plans.find((p) => p.id === currentPlan)?.title}
                       </h3>
                       <p className="text-sm text-green-700 mt-1">
                         Next billing date: 28-06-2025
@@ -219,40 +318,37 @@ export default function SubscriptionsClient({ user }: { user: any }) {
                 </div>
               )}
 
-              {/* Billing Period Toggle */}
+              {/* Billing-period toggle */}
               <div className="flex justify-center mb-8">
                 <div className="flex items-center bg-gray-100 p-1 rounded-lg">
-                  <button
-                    onClick={() => setBillingPeriod('monthly')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${billingPeriod === 'monthly'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                  >
-                    Monthly
-                  </button>
-                  <button
-                    onClick={() => setBillingPeriod('yearly')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors relative ${billingPeriod === 'yearly'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                  >
-                    Yearly
-                    <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-1 rounded">
-                      30% OFF
-                    </span>
-                  </button>
+                  {(["monthly", "yearly"] as const).map((period) => (
+                    <button
+                      key={period}
+                      onClick={() => setBillingPeriod(period)}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        billingPeriod === period
+                          ? "bg-white text-gray-900 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
+                      } ${period === "yearly" ? "relative" : ""}`}
+                    >
+                      {period === "monthly" ? "Monthly" : "Yearly"}
+                      {period === "yearly" && (
+                        <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-1 rounded">
+                          30% OFF
+                        </span>
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Pricing Cards */}
+              {/* Pricing cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {plans.map((plan) => (
                   <PricingCard
                     key={plan.id}
                     title={plan.title}
-                    price={billingPeriod === 'yearly' ? plan.yearlyPrice : plan.price}
+                    price={billingPeriod === "yearly" ? plan.yearlyPrice : plan.price}
                     currency={plan.currency}
                     description={plan.description}
                     features={plan.features}
@@ -264,64 +360,15 @@ export default function SubscriptionsClient({ user }: { user: any }) {
                   />
                 ))}
               </div>
-
-              {/* Feature Comparison */}
-              <div className="mt-12 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Plan Comparison</h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feature</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Free</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pro</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Enterprise</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Blast Messages</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">100/month</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">1,000/month</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">Unlimited</td>
-                      </tr>
-                      <tr className="bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">AI Message Generation</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">10/month</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">200/month</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">Unlimited</td>
-                      </tr>
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Crawl Contacts from WhatsApp Group</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">-</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">✓</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">✓</td>
-                      </tr>
-                      <tr className="bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Reuse Custom Templates</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">-</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">✓</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">✓</td>
-                      </tr>
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Dedicated Account Manager</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">-</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">-</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">✓</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
             </div>
           )}
 
-          {activeTab === 'history' && (
+          {/* ------------------ HISTORY TAB ---------------- */}
+          {activeTab === "history" && (
             <SubscriptionHistory
               currentPlan={mockCurrentPlan}
-              transactions={mockTransactions}
+              transactions={transactions}
+              loading={historyLoading}
             />
           )}
         </div>

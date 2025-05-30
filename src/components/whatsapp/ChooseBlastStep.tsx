@@ -35,7 +35,7 @@ const ChooseBlastStep = ({ user }: ChooseBlastStepProps) => {
       }
     };
     fetchContacts();
-  }, []);
+  }, [userEmail]);
 
   // const handleDelete = (name: string, phone: string) => {
   //   const confirmed = window.confirm(`Are you sure you want to delete ${name || phone}?`);

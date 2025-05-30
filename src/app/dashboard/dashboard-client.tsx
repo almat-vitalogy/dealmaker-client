@@ -61,20 +61,6 @@ const iconMap = {
   MessageCircle: <MessageSquare className="text-indigo-500 w-4 h-4" />, // Assuming MessageCircle is similar to MessageSquare
 };
 
-// const formatDate = (dateString: string) => {
-//   return new Intl.DateTimeFormat("en-GB", {
-//     year: "numeric",
-//     month: "2-digit",
-//     day: "2-digit",
-//     hour: "2-digit",
-//     minute: "2-digit",
-//     hour12: false,
-//     timeZone: "Asia/Hong_Kong",
-//   })
-//     .format(new Date(dateString))
-//     .replace(/\//g, "-");
-// };
-
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toISOString().replace("T", ", ").substring(0, 17); // "2025-05-28, 10:16"

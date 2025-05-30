@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
 
   // Force the fetch to go through your production domain (Option B)
   const { data: session } = await betterFetch<Session>("/api/auth/get-session", {
-    baseURL: "https://dealmaker.turoid.ai",
+    baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL,
     headers: {
       cookie: request.headers.get("cookie") || "",
     },
