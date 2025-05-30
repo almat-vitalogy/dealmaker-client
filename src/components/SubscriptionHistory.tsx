@@ -25,7 +25,6 @@ export type Transaction = {
   plan: string;
   amount: string;
   status: "completed" | "pending" | "failed";
-  /** Stripe-hosted invoice URL (optional) */
   invoiceUrl?: string;
 };
 

@@ -24,11 +24,25 @@ import { useClearLoadingOnRouteChange } from "@/hooks/useClearLoadingOnRouteChan
 const getDiscountedPrice = (m: number) => Math.round(m * 12 * 0.7);
 
 /** map Stripe priceId → plan title (extend when you add more plans) */
+// const priceIdToPlan: Record<string, string> = {
+//   "price_1RU4CrDlkgrFyQgUESMdh6o6": "Pro Plan",
+//   "price_1RU4EbDlkgrFyQgUHILLc7IQ": "Pro Plan (Yearly)",
+//   "price_1RU4FUDlkgrFyQgUgHth5GjP": "Enterprise Plan",
+//   "price_1RU4FpDlkgrFyQgUNl8anlpL": "Enterprise Plan (Yearly)",
+// };
+
+/* ---- 1. Pull the price IDs from the env ---- */
+const PRICE_PRO_MONTHLY   = process.env.NEXT_PUBLIC_PRICE_PRO_MONTHLY  ?? "";
+const PRICE_PRO_YEARLY    = process.env.NEXT_PUBLIC_PRICE_PRO_YEARLY   ?? "";
+const PRICE_ENT_MONTHLY   = process.env.NEXT_PUBLIC_PRICE_ENT_MONTHLY  ?? "";
+const PRICE_ENT_YEARLY    = process.env.NEXT_PUBLIC_PRICE_ENT_YEARLY   ?? "";
+
+/* ---- 2. Build the helper map dynamically ---- */
 const priceIdToPlan: Record<string, string> = {
-  "price_1RU4CrDlkgrFyQgUESMdh6o6": "Pro Plan",
-  "price_1RU4EbDlkgrFyQgUHILLc7IQ": "Pro Plan (Yearly)",
-  "price_1RU4FUDlkgrFyQgUgHth5GjP": "Enterprise Plan",
-  "price_1RU4FpDlkgrFyQgUNl8anlpL": "Enterprise Plan (Yearly)",
+  [PRICE_PRO_MONTHLY] : "Pro Plan",
+  [PRICE_PRO_YEARLY]  : "Pro Plan (Yearly)",
+  [PRICE_ENT_MONTHLY] : "Enterprise Plan",
+  [PRICE_ENT_YEARLY]  : "Enterprise Plan (Yearly)",
 };
 
 const formatAmount = (
@@ -46,6 +60,7 @@ type Transaction = {
   plan: string;
   amount: string;
   status: "completed" | "failed" | "pending";
+  invoiceUrl?: string; 
 };
 
 /* ------------------------------------------------------------------ */
@@ -78,8 +93,8 @@ const plans = [
       "Reuse custom templates",
     ],
     isPopular: true,
-    stripePriceIdMonthly: "price_1RU4CrDlkgrFyQgUESMdh6o6",
-    stripePriceIdYearly: "price_1RU4EbDlkgrFyQgUHILLc7IQ",
+    stripePriceIdMonthly: PRICE_PRO_MONTHLY,
+    stripePriceIdYearly: PRICE_PRO_YEARLY,
   },
   {
     id: "enterprise",
@@ -95,8 +110,8 @@ const plans = [
       "Reuse custom templates",
       "Dedicated account manager",
     ],
-    stripePriceIdMonthly: "price_1RU4FUDlkgrFyQgUgHth5GjP",
-    stripePriceIdYearly: "price_1RU4FpDlkgrFyQgUNl8anlpL",
+    stripePriceIdMonthly: PRICE_ENT_MONTHLY,
+    stripePriceIdYearly: PRICE_ENT_YEARLY,
   },
 ];
 
@@ -359,6 +374,105 @@ export default function SubscriptionsClient({ user }: { user: any }) {
                     billingPeriod={billingPeriod}
                   />
                 ))}
+              </div>
+
+              {/* ------ 🆕  Plan-comparison table (restored) ------ */}
+              <div className="mt-12 bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">Plan Comparison</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Feature
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Free
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Pro
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Enterprise
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      <tr>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          Blast Messages
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          100/month
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          1,000/month
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          Unlimited
+                        </td>
+                      </tr>
+                      <tr className="bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          AI Message Generation
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          10/month
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          200/month
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          Unlimited
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          Crawl Contacts from WhatsApp Group
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          –
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          ✓
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          ✓
+                        </td>
+                      </tr>
+                      <tr className="bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          Reuse Custom Templates
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          –
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          ✓
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          ✓
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          Dedicated Account Manager
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          –
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          –
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                          ✓
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
