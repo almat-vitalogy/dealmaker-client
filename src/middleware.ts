@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server"
-import { betterFetch } from "@better-fetch/fetch"
-import type { auth } from "@/lib/auth"
+import { NextRequest, NextResponse } from "next/server";
+import { betterFetch } from "@better-fetch/fetch";
+// import { betterFetch } from "better-fetch";
+import type { auth } from "@/lib/auth";
 
-type Session = typeof auth.$Infer.Session
+type Session = typeof auth.$Infer.Session;
 
 export async function middleware(request: NextRequest) {
   // For debugging, let's log what Next sees as the origin:
@@ -14,15 +15,15 @@ export async function middleware(request: NextRequest) {
     headers: {
       cookie: request.headers.get("cookie") || "",
     },
-  })
+  });
 
   if (!session) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  return NextResponse.next()
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: ["/dashboard", "/activity-feed", "/blast-dashboard", "/web-controller"],
-}
+};

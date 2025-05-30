@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { RefreshCw, Settings } from "lucide-react";
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useClearLoadingOnRouteChange } from "@/hooks/useClearLoadingOnRouteChange";
 
 // MOCK DATA
 const getDiscountedPrice = (monthlyPrice: number) => Math.round(monthlyPrice * 12 * 0.7);
@@ -26,6 +27,8 @@ const plans = [
       '100 blast messages per month',
       '10 AI message generation per month'
     ],
+    stripePriceIdMonthly: null,
+    stripePriceIdYearly: null,
   },
   {
     id: 'pro',
@@ -41,6 +44,8 @@ const plans = [
       'Reuse custom templates'
     ],
     isPopular: true,
+    stripePriceIdMonthly: 'price_1RU4CrDlkgrFyQgUESMdh6o6',   // <-- replace with your Stripe price ID
+    stripePriceIdYearly: 'price_1RU4EbDlkgrFyQgUHILLc7IQ',     // <-- replace with your Stripe price ID
   },
   {
     id: 'enterprise',
@@ -56,6 +61,8 @@ const plans = [
       'Reuse custom templates',
       'Dedicated account manager'
     ],
+    stripePriceIdMonthly: 'price_1RU4FUDlkgrFyQgUgHth5GjP',   // <-- replace with your Stripe price ID
+    stripePriceIdYearly: 'price_1RU4FpDlkgrFyQgUNl8anlpL',     // <-- replace with your Stripe price ID
   }
 ];
 
@@ -82,6 +89,7 @@ export default function SubscriptionsClient({ user }: { user: any }) {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [currentPlan, setCurrentPlan] = useState('free'); // mock current plan
   const { toast } = useToast();
+  useClearLoadingOnRouteChange();
 
   const mockCurrentPlan = currentPlan !== 'free' ? {
     name: plans.find(p => p.id === currentPlan)?.title || 'Pro Plan',
@@ -100,12 +108,26 @@ export default function SubscriptionsClient({ user }: { user: any }) {
     }
     setLoadingPlan(planId);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setCurrentPlan(planId);
-      toast({
-        title: "Subscription Successful!",
-        description: `You've successfully subscribed to the ${plans.find(p => p.id === planId)?.title}`,
+      const plan = plans.find(p => p.id === planId);
+      const priceId = billingPeriod === 'monthly' ? plan?.stripePriceIdMonthly : plan?.stripePriceIdYearly;
+
+      if (!priceId) throw new Error("PriceId not found for this plan");
+
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ priceId }),
       });
+
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      } else {
+        throw new Error("Failed to create checkout session");
+      }
     } catch (error) {
       toast({
         title: "Subscription Failed",

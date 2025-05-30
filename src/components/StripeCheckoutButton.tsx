@@ -2,9 +2,15 @@
 
 import { redirectToCheckout } from '@/lib/stripe';
 
-export default function StripeCheckoutButton() {
+export default function StripeCheckoutButton({ priceId }: { priceId: string }) {
   const handleCheckout = async () => {
-    await redirectToCheckout([{ id: 'prod_basic_subscription', quantity: 1 }]);
+    const res = await fetch('/api/stripe/create-checkout-session', {
+      method: 'POST',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ priceId }),
+    });
+    const data = await res.json();
+    window.location.href = data.url;
   };
 
   return (
