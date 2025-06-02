@@ -18,7 +18,9 @@ interface BlastState {
   contactStatus: "success" | "loading" | "error" | "";
   composeMessageStatus: "success" | "loading" | "error" | "";
   title: string;
+  userEmail: string;
 
+  setUserEmail: (userEmail: string) => void;
   setTitle: (title: string) => void;
   setContactStatus: (status: "success" | "loading" | "error" | "") => void;
   setContacts: (contacts: Contact[]) => void;
@@ -51,7 +53,11 @@ export const useBlastStore = create<BlastState>()(
       contactStatus: "",
       composeMessageStatus: "",
       title: "",
+      userEmail: "",
 
+      setUserEmail: (userEmail) => {
+        set({ userEmail: userEmail });
+      },
       setTitle: (title) => set({ title }),
       setContactStatus: (status) => set({ contactStatus: status }),
       setContacts: (contacts) => set({ contacts }),
@@ -97,7 +103,7 @@ export const useBlastStore = create<BlastState>()(
         const { userId } = get();
 
         if (!userId) {
-          console.warn("❗ No userId to disconnect.");
+          // console.warn("❗ No userId to disconnect.");
           return false;
         }
         set({ connectionStatus: "Loading..." });
@@ -250,7 +256,9 @@ export const useBlastStore = create<BlastState>()(
           console.error("❌ composeMessage error:", error);
         }
       },
-      clearStorage: () =>
+      clearStorage: () => {
+        window.confirm(`Are you sure you want to logout?`);
+        get().disconnectUser(get().userEmail);
         set({
           contacts: [],
           selectedContacts: [],
@@ -261,7 +269,8 @@ export const useBlastStore = create<BlastState>()(
           messageStatus: "",
           contactStatus: "",
           composeMessageStatus: "",
-        }),
+        });
+      },
 
       addContactToDB: async (userEmail, name, phone, userEmail2) => {
         try {

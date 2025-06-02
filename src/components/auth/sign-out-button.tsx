@@ -4,6 +4,7 @@ import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Icons } from "../icons";
 import { useBlastStore } from "@/store/blast";
+import { clear } from "console";
 
 export default function SignOutButton() {
   const { clearStorage } = useBlastStore();
@@ -12,6 +13,7 @@ export default function SignOutButton() {
     await signOut({
       fetchOptions: {
         onSuccess: () => {
+          clearStorage(); // Clear the store
           router.push("/login"); // redirect to login page
         },
       },

@@ -70,13 +70,15 @@ export default function DashboardClient({ user }: { user: any }) {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [checkingConnection, setCheckingConnection] = useState(false);
   const [connectionChecked, setConnectionChecked] = useState(false);
-  const { connectUser, qrCodeUrl, disconnectUser, connectionStatus, userId } = useBlastStore();
+  const { connectUser, qrCodeUrl, disconnectUser, connectionStatus, userId, setUserEmail } = useBlastStore();
   const userEmail = user?.email || "";
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${encodeURIComponent(userEmail)}`);
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${encodeURIComponent(userEmail)}`
+        );
         console.log("✅ Dashboard data fetched:", response.data);
         setDashboardData(response.data);
       } catch (error) {
@@ -84,6 +86,7 @@ export default function DashboardClient({ user }: { user: any }) {
       }
     };
     fetchDashboard();
+    setUserEmail(userEmail);
   }, [userEmail]);
 
   const handleCheckConnection = async () => {
@@ -259,7 +262,12 @@ export default function DashboardClient({ user }: { user: any }) {
                       </div>
                     )}
 
-                    <Button onClick={handleCheckConnection} disabled={checkingConnection} className="w-48" variant="outline">
+                    <Button
+                      onClick={handleCheckConnection}
+                      disabled={checkingConnection}
+                      className="w-48"
+                      variant="outline"
+                    >
                       {checkingConnection ? (
                         <>
                           Checking... <Loader2 className="animate-spin ml-2 h-4 w-4" />
@@ -293,20 +301,22 @@ export default function DashboardClient({ user }: { user: any }) {
                     <div className="flex items-center gap-3">
                       <CheckCircle className="w-5 h-5 mt-1 text-green-500" />
                       <p className="flex-1">
-                        3. Press <strong>Check Connection</strong>. You should receive a confirmation message on WhatsApp.
+                        3. Press <strong>Check Connection</strong>. You should receive a confirmation message on
+                        WhatsApp.
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <RefreshCcw className="w-5 h-5 mt-1" />
                       <p className="flex-1">
-                        4. Once connected, <strong>do not reconnect unless</strong> &quot;Check Connection&quot; does not send the message.
+                        4. Once connected, <strong>do not reconnect unless</strong> &quot;Check Connection&quot; does
+                        not send the message.
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <AlertTriangle className="w-5 h-5 mt-1 text-yellow-500" />
                       <p className="flex-1">
-                        5. If you <strong>don’t receive confirmation</strong>, refresh the QR, scan it again, wait 30 seconds, and then try checking
-                        again.
+                        5. If you <strong>don’t receive confirmation</strong>, refresh the QR, scan it again, wait 30
+                        seconds, and then try checking again.
                       </p>
                     </div>
                   </CardContent>
