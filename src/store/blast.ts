@@ -65,7 +65,9 @@ export const useBlastStore = create<BlastState>()(
         set((state) => {
           const isSelected = state.selectedContacts.includes(phone);
           return {
-            selectedContacts: isSelected ? state.selectedContacts.filter((p) => p !== phone) : [...state.selectedContacts, phone],
+            selectedContacts: isSelected
+              ? state.selectedContacts.filter((p) => p !== phone)
+              : [...state.selectedContacts, phone],
           };
         }),
       setMessage: (message) => set({ message }),
@@ -135,7 +137,7 @@ export const useBlastStore = create<BlastState>()(
         }
 
         try {
-          await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/update-activity`, {
+          await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/activities/update`, {
             userEmail,
             action,
           });
@@ -201,7 +203,9 @@ export const useBlastStore = create<BlastState>()(
 
           // Filter out duplicates based on phone number
           const existingPhones = new Set(existingContacts.map((c) => c.phone));
-          const newContacts = phoneNumbers.filter((number) => !existingPhones.has(number)).map((number) => ({ name: number, phone: number }));
+          const newContacts = phoneNumbers
+            .filter((number) => !existingPhones.has(number))
+            .map((number) => ({ name: number, phone: number }));
 
           const combinedContacts = [...existingContacts, ...newContacts];
 
@@ -228,7 +232,7 @@ export const useBlastStore = create<BlastState>()(
         set({ composeMessageStatus: "loading" });
 
         try {
-          const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/message-composer/generate`, {
+          const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/message-composer/generate`, {
             goal,
           });
 
@@ -261,7 +265,10 @@ export const useBlastStore = create<BlastState>()(
 
       addContactToDB: async (userEmail, name, phone, userEmail2) => {
         try {
-          const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/add-contact/${userEmail}`, { name, phone });
+          const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/add/${userEmail}`, {
+            name,
+            phone,
+          });
           console.log(response);
           set((state) => ({ contacts: [...state.contacts, response.data.forntendContact] }));
           console.log(`✅ ${name || "Unnamed Contact"} (${phone}) has been added successfully!`);
@@ -273,7 +280,7 @@ export const useBlastStore = create<BlastState>()(
 
       deleteContactFromDB: async (agentPhone, phone, userEmail) => {
         try {
-          await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/delete-contact/${agentPhone}/${phone}`);
+          await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/delete/${agentPhone}/${phone}`);
           set((state) => ({ contacts: state.contacts.filter((c) => c.phone !== phone) }));
           console.log(`🗑️ Contact (${phone}) has been deleted successfully!`);
           await get().logActivity(userEmail, "contact deleted");

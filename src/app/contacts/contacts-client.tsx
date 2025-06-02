@@ -14,8 +14,16 @@ export default function ContactsClient({ user }: { user: any }) {
   const userEmail = encodeURIComponent(user?.email || "");
   const userEmail2 = user?.email || "";
 
-  const { contacts, selectContact, selectedContacts, scrapeContacts, contactStatus, setContacts, addContactToDB, deleteContactFromDB } =
-    useBlastStore();
+  const {
+    contacts,
+    selectContact,
+    selectedContacts,
+    scrapeContacts,
+    contactStatus,
+    setContacts,
+    addContactToDB,
+    deleteContactFromDB,
+  } = useBlastStore();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -25,7 +33,7 @@ export default function ContactsClient({ user }: { user: any }) {
 
     const fetchContacts = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/get-contacts/${userEmail}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/${userEmail}`);
         const data = await response.json();
         setContacts(data);
       } catch (error) {
@@ -102,8 +110,18 @@ export default function ContactsClient({ user }: { user: any }) {
             <CardContent className="-mt-5">
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-6">
-                  <Input className="text-black" placeholder="Name (John Doe)" value={name} onChange={(e) => setName(e.target.value)} />
-                  <Input className="text-black" placeholder="Phone Number (85291234567)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                  <Input
+                    className="text-black"
+                    placeholder="Name (John Doe)"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                  <Input
+                    className="text-black"
+                    placeholder="Phone Number (85291234567)"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
                 </div>
                 <Button
                   onClick={() => {
@@ -137,11 +155,15 @@ export default function ContactsClient({ user }: { user: any }) {
                         onChange={() => selectContact(contact.phone)}
                         className="mr-3 h-4 w-4"
                       />
-                      <label>{contact.name || contact.phone}</label>
+                      <label>{contact?.name || contact.phone}</label>
                     </div>
                     <span className="text-muted-foreground flex items-center gap-2">
-                      {contact.phone}
-                      <XCircle className="cursor-pointer hover:text-red-500" size={16} onClick={() => handleDelete(contact.name, contact.phone)} />
+                      {contact?.phone}
+                      <XCircle
+                        className="cursor-pointer hover:text-red-500"
+                        size={16}
+                        onClick={() => handleDelete(contact.name, contact.phone)}
+                      />
                     </span>
                   </div>
                 ))}
