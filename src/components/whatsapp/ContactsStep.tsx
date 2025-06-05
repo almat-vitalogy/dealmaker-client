@@ -14,8 +14,16 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
   const userEmail = encodeURIComponent(user?.email || "");
   const userEmail2 = user?.email || "";
 
-  const { contacts, selectContact, selectedContacts, scrapeContacts, contactStatus, setContacts, addContactToDB, deleteContactFromDB } =
-    useBlastStore();
+  const {
+    contacts,
+    selectContact,
+    selectedContacts,
+    scrapeContacts,
+    contactStatus,
+    setContacts,
+    addContactToDB,
+    deleteContactFromDB,
+  } = useBlastStore();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -25,7 +33,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
 
     const fetchContacts = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/get-contacts/${userEmail}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/${userEmail}`);
         const data = await response.json();
         setContacts(data);
       } catch (error) {
@@ -131,7 +139,11 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
                 </div>
                 <span className="text-muted-foreground flex items-center gap-2">
                   {contact.phone}
-                  <XCircle className="cursor-pointer hover:text-red-500" size={16} onClick={() => handleDelete(contact.name, contact.phone)} />
+                  <XCircle
+                    className="cursor-pointer hover:text-red-500"
+                    size={16}
+                    onClick={() => handleDelete(contact.name, contact.phone)}
+                  />
                 </span>
               </div>
             ))}

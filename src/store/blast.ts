@@ -5,6 +5,16 @@ import { persist, createJSONStorage } from "zustand/middleware";
 type Contact = {
   name: string;
   phone: string;
+  labelIds: string[];
+};
+
+type LabelStatus = "success" | "loading" | "error" | "";
+type Label = {
+  _id: string;
+  name: string;
+  color?: string;
+  userEmail: string;
+  contactIds: string[];
 };
 
 interface BlastState {
@@ -19,12 +29,21 @@ interface BlastState {
   composeMessageStatus: "success" | "loading" | "error" | "";
   title: string;
   userEmail: string;
+  labels: Label[];
+  labelStatus: LabelStatus;
+  activeLabel: string;
 
+  setActiveLabel: (labelId: string) => void;
+  setLabels: (labels: Label[]) => void;
+  setLabelStatus: (status: LabelStatus) => void;
+  getLabels: (userEmail: string) => Promise<void>;
+  createLabel: (name: string, color: string, userEmail: string) => Promise<void>;
+  deleteLabel: (labelId: string, userEmail: string) => Promise<void>;
+  toggleLabel: (contactId: string, labelId: string, userEmail: string) => Promise<void>;
   setUserEmail: (userEmail: string) => void;
   setTitle: (title: string) => void;
   setContactStatus: (status: "success" | "loading" | "error" | "") => void;
   setContacts: (contacts: Contact[]) => void;
-  // addContact: (name: string, phone: string) => void;
   selectContact: (phone: string) => void;
   setMessage: (message: string) => void;
   setConnectionStatus: (status: "Connect" | "Loading..." | "Disconnect") => void;
@@ -54,18 +73,19 @@ export const useBlastStore = create<BlastState>()(
       composeMessageStatus: "",
       title: "",
       userEmail: "",
+      labels: [],
+      labelStatus: "",
+      activeLabel: "",
 
+      setActiveLabel: (labelId) => set({ activeLabel: labelId }),
+      setLabels: (labels) => set({ labels }),
+      setLabelStatus: (status) => set({ labelStatus: status }),
       setUserEmail: (userEmail) => {
         set({ userEmail: userEmail });
       },
       setTitle: (title) => set({ title }),
       setContactStatus: (status) => set({ contactStatus: status }),
       setContacts: (contacts) => set({ contacts }),
-
-      // addContact: (name, phone) =>
-      //   set((state) => ({
-      //     contacts: [...state.contacts, { name, phone }],
-      //   })),
 
       selectContact: (phone) =>
         set((state) => {
@@ -76,9 +96,79 @@ export const useBlastStore = create<BlastState>()(
               : [...state.selectedContacts, phone],
           };
         }),
+
       setMessage: (message) => set({ message }),
       setConnectionStatus: (status) => set({ connectionStatus: status }),
       setMessageStatus: (status) => set({ messageStatus: status }),
+
+      getLabels: async (userEmail) => {
+        if (!userEmail) return;
+        set({ labelStatus: "loading" });
+        try {
+          const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/get-labels`, {
+            params: { userEmail },
+          });
+          set({ labels: data, labelStatus: "success" });
+        } catch (err) {
+          console.error("❌ getLabels:", err);
+          set({ labelStatus: "error" });
+        } finally {
+          setTimeout(() => set({ labelStatus: "" }), 15000);
+        }
+      },
+
+      createLabel: async (name, color = "#3b82f6", userEmail) => {
+        if (!name || !userEmail) return;
+        set({ labelStatus: "loading" });
+        try {
+          const { data: newLabel } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/create-label`, {
+            name,
+            color,
+            userEmail,
+          });
+          set((s) => ({ labels: [...s.labels, newLabel], labelStatus: "success" }));
+          await get().logActivity(userEmail, `label "${name}" created`);
+        } catch (err) {
+          console.error("❌ createLabel:", err);
+          set({ labelStatus: "error" });
+        } finally {
+          setTimeout(() => set({ labelStatus: "" }), 15000);
+        }
+      },
+
+      deleteLabel: async (labelId, userEmail) => {
+        if (!labelId) return;
+        set({ labelStatus: "loading" });
+        try {
+          await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/delete-label/${labelId}`);
+          set((s) => ({
+            labels: s.labels.filter((l) => l._id !== labelId),
+            labelStatus: "success",
+          }));
+          await get().logActivity(userEmail, "label deleted");
+        } catch (err) {
+          console.error("❌ deleteLabel:", err);
+          set({ labelStatus: "error" });
+        } finally {
+          setTimeout(() => set({ labelStatus: "" }), 15000);
+        }
+      },
+
+      toggleLabel: async (contactId, labelId, userEmail) => {
+        if (!contactId || !labelId) return;
+        try {
+          await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/toggle-label`, {
+            contactId,
+            labelId,
+            userEmail,
+          });
+          /* optional: update local contact array if you store labelIds per contact */
+          await get().logActivity(userEmail, "label toggled");
+        } catch (err) {
+          console.error("❌ toggleLabel:", err);
+        }
+      },
+
       connectUser: async (userEmail) => {
         set({ connectionStatus: "Loading..." });
         try {
@@ -99,6 +189,7 @@ export const useBlastStore = create<BlastState>()(
           return false;
         }
       },
+
       disconnectUser: async (userEmail) => {
         const { userId } = get();
 
@@ -136,6 +227,7 @@ export const useBlastStore = create<BlastState>()(
           return false;
         }
       },
+
       logActivity: async (userEmail: string, action: string) => {
         if (!userEmail || !action) {
           console.warn("❗ logActivity: Missing userEmail or action");
@@ -153,6 +245,7 @@ export const useBlastStore = create<BlastState>()(
           console.error("❌ Error logging activity:", error);
         }
       },
+
       sendMessage: async (userEmail) => {
         const { userId, message, selectedContacts, title } = get();
 
@@ -193,6 +286,7 @@ export const useBlastStore = create<BlastState>()(
           return false;
         }
       },
+
       scrapeContacts: async (userEmail) => {
         const { userId, contacts: existingContacts } = get();
         if (!userId) {
@@ -211,7 +305,7 @@ export const useBlastStore = create<BlastState>()(
           const existingPhones = new Set(existingContacts.map((c) => c.phone));
           const newContacts = phoneNumbers
             .filter((number) => !existingPhones.has(number))
-            .map((number) => ({ name: number, phone: number }));
+            .map((number) => ({ name: number, phone: number, labelIds: [] }));
 
           const combinedContacts = [...existingContacts, ...newContacts];
 
@@ -230,6 +324,7 @@ export const useBlastStore = create<BlastState>()(
           console.error("❌ scrapeContacts error:", error);
         }
       },
+
       composeMessage: async (goal: string, userEmail) => {
         if (!goal || userEmail === "") {
           console.warn("❗ Goal is required to compose a message.");
@@ -256,6 +351,7 @@ export const useBlastStore = create<BlastState>()(
           console.error("❌ composeMessage error:", error);
         }
       },
+
       clearStorage: () => {
         window.confirm(`Are you sure you want to logout?`);
         get().disconnectUser(get().userEmail);
