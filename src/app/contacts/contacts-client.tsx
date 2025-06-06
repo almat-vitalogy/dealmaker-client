@@ -203,11 +203,14 @@ export default function ContactsClient({ user }: { user: any }) {
   const [importMessage, setImportMessage] = useState("");
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
 
-  useEffect(() => {
-    if (!activeLabel) return;
-    const lbl = labels.find((l) => l._id === activeLabel);
-    if (lbl) setSearchTerm(lbl.name);
-  }, [activeLabel, labels]);
+  // useEffect(() => {
+  //   if (!activeLabel) {
+  //     setSearchTerm("");
+  //     return;
+  //   }
+  //   const lbl = labels.find((l) => l._id === activeLabel);
+  //   if (lbl) setSearchTerm(lbl.name);
+  // }, [activeLabel, labels]);
 
   useEffect(() => {
     console.log("updating");
@@ -217,15 +220,19 @@ export default function ContactsClient({ user }: { user: any }) {
     }
 
     const filtered = contacts.filter((contact) => {
-      const query = searchTerm.toLowerCase();
-      return (
-        (contact?.name && contact?.name.toLowerCase().includes(query)) ||
-        (contact?.phone && contact?.phone.toLowerCase().includes(query))
-      );
+      const q = searchTerm.toLowerCase();
+
+      const matchesSearch =
+        (contact.name && contact.name.toLowerCase().includes(q)) ||
+        (contact.phone && contact.phone.toLowerCase().includes(q));
+
+      const matchesLabel = !activeLabel || contact.labels.includes(activeLabel);
+
+      return matchesSearch && matchesLabel;
     });
 
     setFilteredContacts(filtered);
-  }, [contacts, searchTerm, addContactToDB]);
+  }, [contacts, searchTerm, addContactToDB, activeLabel]);
 
   useEffect(() => {
     if (!userEmail) return;
@@ -705,6 +712,7 @@ export default function ContactsClient({ user }: { user: any }) {
                                 type="checkbox"
                                 checked={selectedContacts.includes(c.phone)}
                                 onChange={() => selectContact(c.phone)}
+                                onClick={(e) => e.stopPropagation()}
                                 className="mr-3 h-4 w-4"
                               />
                               <span>{c.name?.trim() || c.phone}</span>

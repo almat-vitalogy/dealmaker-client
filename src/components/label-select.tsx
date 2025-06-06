@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectSeparator } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { XCircle } from "lucide-react";
 import { useBlastStore } from "@/store/blast";
@@ -33,10 +33,10 @@ export default function LabelSelect() {
     createLabel, // POST creator
     deleteLabel, // DELETE label
     setActiveLabel,
+    activeLabel,
   } = useBlastStore();
 
   /* ─── Local UI state for the Select component ─── */
-  const [value, setValue] = useState<string>("");
   const [isCreating, setCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState<string>(BASIC_COLORS[0]);
@@ -64,10 +64,9 @@ export default function LabelSelect() {
   /* ---------------------------------------------------------------- */
   return (
     <Select
-      value={value}
+      value={activeLabel}
       onValueChange={(val) => {
-        setValue(val);
-        setActiveLabel(val.length ? val : "");
+        setActiveLabel(val);
       }}
     >
       <SelectTrigger className="w-[200px]">
@@ -78,7 +77,7 @@ export default function LabelSelect() {
         {/* ─────────── Existing labels ─────────── */}
         {labels.map((lbl) => (
           <div key={lbl._id} className="relative">
-            <SelectItem value={lbl.name} className="flex items-center justify-between">
+            <SelectItem value={lbl._id} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="truncate max-w-[80px]">{lbl.name}</span>
                 <span className="h-3 w-3 rounded-sm border" style={{ backgroundColor: lbl.color || "#3b82f6" }} />
@@ -144,6 +143,19 @@ export default function LabelSelect() {
             </div>
           </div>
         )}
+
+        <SelectSeparator />
+        <Button
+          className="w-full px-2"
+          variant="secondary"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setActiveLabel("");
+          }}
+        >
+          Clear
+        </Button>
       </SelectContent>
     </Select>
   );
