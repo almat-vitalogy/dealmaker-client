@@ -3,9 +3,10 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 type Contact = {
+  _id: string;
   name: string;
   phone: string;
-  labelIds: string[];
+  labels: string[];
 };
 
 type LabelStatus = "success" | "loading" | "error" | "";
@@ -156,13 +157,39 @@ export const useBlastStore = create<BlastState>()(
 
       toggleLabel: async (contactId, labelId, userEmail) => {
         if (!contactId || !labelId) return;
+        console.log(`Toggling label ${labelId} for contact ${contactId}`);
         try {
-          await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/toggle-label`, {
+          const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/toggle-label`, {
             contactId,
             labelId,
             userEmail,
           });
-          /* optional: update local contact array if you store labelIds per contact */
+
+          const mode = data.mode as "attached" | "detached";
+
+          /* ── sync local state ──────────────────────────────── */
+          set((state) => {
+            /* update label.contactIds */
+            const labels = state.labels.map((lbl) => {
+              if (lbl._id !== labelId) return lbl;
+              const hasContact = lbl.contactIds.includes(contactId);
+              if (mode === "attached" && !hasContact) return { ...lbl, contactIds: [...lbl.contactIds, contactId] };
+              if (mode === "detached") return { ...lbl, contactIds: lbl.contactIds.filter((id) => id !== contactId) };
+              return lbl;
+            });
+
+            /* update contact.labels */
+            const contacts = state.contacts.map((c) => {
+              if (c._id !== contactId) return c;
+              const hasLabel = (c.labels || []).includes(labelId);
+              if (mode === "attached" && !hasLabel) return { ...c, labels: [...(c.labels || []), labelId] };
+              if (mode === "detached") return { ...c, labels: c.labels.filter((id) => id !== labelId) };
+              return c;
+            });
+
+            return { labels, contacts };
+          });
+
           await get().logActivity(userEmail, "label toggled");
         } catch (err) {
           console.error("❌ toggleLabel:", err);
@@ -288,40 +315,30 @@ export const useBlastStore = create<BlastState>()(
       },
 
       scrapeContacts: async (userEmail) => {
-        const { userId, contacts: existingContacts } = get();
+        const { userId } = get();
         if (!userId) {
           console.warn("❗ Cannot scrape contacts — no userId");
           return;
         }
         set({ contactStatus: "loading" });
         try {
-          const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scrape-contacts`, {
-            userId,
-          });
+          const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scrape-contacts`, { userId });
 
-          const phoneNumbers: string[] = response.data.phoneNumbers || [];
+          const phoneNumbers: string[] = data.phoneNumbers || [];
 
-          // Filter out duplicates based on phone number
-          const existingPhones = new Set(existingContacts.map((c) => c.phone));
-          const newContacts = phoneNumbers
-            .filter((number) => !existingPhones.has(number))
-            .map((number) => ({ name: number, phone: number, labelIds: [] }));
+          for (const phone of new Set(phoneNumbers)) {
+            if (!get().contacts.some((c) => c.phone === phone)) {
+              await get().addContactToDB(userEmail, phone, phone, userEmail);
+            }
+          }
 
-          const combinedContacts = [...existingContacts, ...newContacts];
-
-          set({ contacts: combinedContacts, contactStatus: "success" });
-
-          console.log(`✅ Added ${newContacts.length} new contacts (Total: ${combinedContacts.length})`);
-
-          await get().logActivity(userEmail, "contacts scraped");
-
-          // Reset status after 15 seconds
-          setTimeout(() => {
-            set({ contactStatus: "" });
-          }, 15000);
+          set({ contactStatus: "success" });
+          await get().logActivity(userEmail, "contacts scraped & saved");
         } catch (error) {
-          set({ contactStatus: "error" });
           console.error("❌ scrapeContacts error:", error);
+          set({ contactStatus: "error" });
+        } finally {
+          setTimeout(() => set({ contactStatus: "" }), 15_000);
         }
       },
 
@@ -375,7 +392,7 @@ export const useBlastStore = create<BlastState>()(
             phone,
           });
           console.log(response);
-          set((state) => ({ contacts: [...state.contacts, response.data.forntendContact] }));
+          set((state) => ({ contacts: [...state.contacts, response.data.contact] }));
           console.log(`✅ ${name || "Unnamed Contact"} (${phone}) has been added successfully!`);
           await get().logActivity(userEmail2, "contact added");
         } catch (error) {
