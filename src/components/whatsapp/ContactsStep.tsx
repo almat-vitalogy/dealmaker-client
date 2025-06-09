@@ -125,7 +125,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
         </CardHeader>
 
         <CardContent>
-          <div className="space-y-3 max-h-[250px] overflow-y-auto">
+          <div className="space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto">
             {(contacts || []).map((contact, index) => (
               <div key={index} className="flex items-center justify-between border-b pb-2">
                 <div className="flex items-center">
