@@ -37,15 +37,15 @@ const MessageStep = ({ user }: any) => {
           <CardTitle>Message Editor</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
-          <div className="relative space-y-2 max-h-[440px]">
+          <div className="relative space-y-2 max-h-[440px] border rounded-md">
             <textarea
-              className="w-full h-48 p-3 pr-28 border rounded-md resize-none"
+              className="w-full h-48 p-3 mb-5 resize-none focus:outline-none "
               placeholder="Type your message here, or use AI to rewrite it..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
 
-            <div className="absolute bottom-8 left-3">
+            <div className="relative bottom-3 left-3">
               <Button variant="outline" size="sm" onClick={handleRewrite} disabled={composeMessageStatus === "loading"}>
                 {composeMessageStatus === "loading" ? (
                   <>
