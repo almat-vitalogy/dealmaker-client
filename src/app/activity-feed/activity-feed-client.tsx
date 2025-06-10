@@ -66,6 +66,8 @@ export default function ActivityFeedClient({ user }: { user: any }) {
       { key: "contacts scraped & saved", icon: "SearchCheck" },
       { key: "contact added", icon: "PlusCircle" },
       { key: "contact deleted", icon: "XCircle" },
+      { key: "labels added", icon: "Tag" },
+      { key: "contacts deleted", icon: "Trash2" },
       { key: "blast created", icon: "MessageSquare" },
       { key: "blast sent", icon: "CheckCircle" },
       { key: "session connected", icon: "RefreshCcw" },
