@@ -2,7 +2,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { CheckCircle, CheckCircle2, MessageSquare, PlusCircle, RefreshCcw, XCircle, Download, SearchCheck, Tag, Trash2 } from "lucide-react";
+import { CheckCircle, CheckCircle2, MessageSquare, PlusCircle, RefreshCcw, XCircle, Download, SearchCheck, Tag, Trash2, MinusCircle } from "lucide-react";
 import axios from "axios";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +26,8 @@ const iconMap: Record<string, JSX.Element> = {
   Download: <Download className="text-green-500 w-5 h-5" />,
   SearchCheck: <SearchCheck className="text-teal-500 w-5 h-5" />,
   Trash2: <Trash2 className="text-red-500 w-5 h-5" />, // for mass delete
-  Tag: <Tag className="text-yellow-600 w-5 h-5" />, //for mass label assign
+  Tag: <Tag className="text-green-500 w-5 h-5" />, //for mass label assign
+  TagRemove: <MinusCircle className="text-red-500 w-5 h-5" />, // for mass label deassign
 };
 
 const formatDate = (dateString: string) => {
@@ -66,7 +67,8 @@ export default function ActivityFeedClient({ user }: { user: any }) {
       { key: "contacts scraped & saved", icon: "SearchCheck" },
       { key: "contact added", icon: "PlusCircle" },
       { key: "contact deleted", icon: "XCircle" },
-      { key: "labels added", icon: "Tag" },
+      { key: "mass-assigned label", icon: "Tag" },
+      { key: "mass-deassigned label", icon: "TagRemove" },
       { key: "contacts deleted", icon: "Trash2" },
       { key: "blast created", icon: "MessageSquare" },
       { key: "blast sent", icon: "CheckCircle" },

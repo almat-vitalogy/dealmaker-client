@@ -59,7 +59,7 @@ interface BlastState {
   composeMessage: (goal: string, userEmail: string) => Promise<void>;
   clearStorage: () => void;
   addContactToDB: (agentPhone: string, name: string, phone: string, userEmail2: string, massAction: boolean) => Promise<void>;
-  deleteContactFromDB: (agentPhone: string, phone: string, userEmail: string) => Promise<void>;
+  deleteContactFromDB: (agentPhone: string, phone: string, userEmail: string, massAction: boolean) => Promise<void>;
 }
 
 export const useBlastStore = create<BlastState>()(
@@ -106,7 +106,7 @@ export const useBlastStore = create<BlastState>()(
             labelId,
             userEmail,
           });
-          await get().logActivity(userEmail, `label ${labelId} mass-assigned to ${contactIds.length} contacts`);
+          await get().logActivity(userEmail, `mass-assigned label ${labelId} to ${contactIds.length} contacts`);
         } catch (err) {
           console.error("❌ massAssignLabel:", err);
           /* 3️⃣ rollback */
@@ -140,7 +140,7 @@ export const useBlastStore = create<BlastState>()(
             labelId,
             userEmail,
           });
-          await get().logActivity(userEmail, `label ${labelId} mass-deassigned from ${contactIds.length} contacts`);
+          await get().logActivity(userEmail, `mass-deassigned label ${labelId} from ${contactIds.length} contacts`);
         } catch (err) {
           console.error("❌ massDeassignLabel:", err);
           /* 3️⃣ rollback */
@@ -470,12 +470,12 @@ export const useBlastStore = create<BlastState>()(
         }
       },
 
-      deleteContactFromDB: async (agentPhone, phone, userEmail) => {
+      deleteContactFromDB: async (agentPhone, phone, userEmail, massAction) => {
         try {
           await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/delete/${agentPhone}/${phone}`);
           set((state) => ({ contacts: state.contacts.filter((c) => c.phone !== phone) }));
+          if (!massAction) await get().logActivity(userEmail, "contact deleted");
           console.log(`🗑️ Contact (${phone}) has been deleted successfully!`);
-          await get().logActivity(userEmail, "contact deleted");
         } catch (error) {
           console.error("❌ Error deleting contact from DB:", error);
         }

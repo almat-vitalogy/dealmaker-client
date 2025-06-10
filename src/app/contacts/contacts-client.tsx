@@ -382,7 +382,7 @@ export default function ContactsClient({ user }: { user: any }) {
 
     if (confirmed) {
       try {
-        deleteContactFromDB(userEmail, phone, userEmail2);
+        deleteContactFromDB(userEmail, phone, userEmail2, false);
         alert(`${displayName} has been deleted!`);
       } catch (error) {
         console.error("Error deleting contact:", error);
@@ -391,7 +391,7 @@ export default function ContactsClient({ user }: { user: any }) {
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (!Array.isArray(selectedContacts) || selectedContacts.length === 0) {
       alert("No contacts selected for deletion");
       return;
@@ -407,8 +407,9 @@ export default function ContactsClient({ user }: { user: any }) {
       try {
         selectedContacts.forEach((phone) => {
           selectContact(phone);
-          deleteContactFromDB(userEmail, phone, userEmail2);
+          deleteContactFromDB(userEmail, phone, userEmail2,true);
         });
+        await logActivity(userEmail2, `contacts deleted successfully - ${selectedContacts.length}`);
         alert(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
       } catch (error) {
         console.error("Error deleting selected contacts:", error);
