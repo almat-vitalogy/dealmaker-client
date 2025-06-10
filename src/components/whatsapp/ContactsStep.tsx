@@ -33,6 +33,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
     labels,
     activeLabel,
     toggleLabel,
+    logActivity,
   } = useBlastStore();
 
   useEffect(() => {
@@ -80,12 +81,12 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
   const handleDelete = (name: string, phone: string) => {
     const confirmed = window.confirm(`Are you sure you want to delete ${name || phone}?`);
     if (confirmed) {
-      deleteContactFromDB(userEmail, phone, userEmail2);
+      deleteContactFromDB(userEmail, phone, userEmail2, false);
       alert(`${name || phone} has been deleted!`);
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (!Array.isArray(selectedContacts) || selectedContacts.length === 0) {
       alert("No contacts selected for deletion");
       return;
@@ -101,8 +102,9 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
       try {
         selectedContacts.forEach((phone) => {
           selectContact(phone);
-          deleteContactFromDB(userEmail, phone, userEmail2);
+          deleteContactFromDB(userEmail, phone, userEmail2, true);
         });
+        await logActivity(userEmail2, `contacts deleted successfully - ${selectedContacts.length}`);
         alert(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
       } catch (error) {
         console.error("Error deleting selected contacts:", error);
@@ -270,11 +272,10 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
                 </Dialog>
               );
             })}
-
           </div>
         </CardContent>
       </Card>
     </div>
   );
-}
+};
 export default ContactsStep;

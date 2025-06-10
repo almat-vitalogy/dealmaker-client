@@ -147,7 +147,7 @@ export default function LabelSelect() {
           };
 
           return (
-            <div className="relative">
+            <div className="relative" key={lbl._id}>
               <SelectItem
                 key={lbl._id}
                 value={lbl._id} // still needed for filter mode
