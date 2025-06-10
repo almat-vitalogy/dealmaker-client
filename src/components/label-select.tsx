@@ -63,7 +63,7 @@ export default function LabelSelect() {
   const isBulkMode = selectedContactIds.length > 0;
 
   /* updated click-handler */
-  const makeToggleHandler = (lblId: string) => async () => {
+  const makeToggleHandler = (lblname: string, lblId: string) => async () => {
     if (!isBulkMode) {
       /* normal filter behaviour */
       setActiveLabel(lblId === activeLabel ? "" : lblId);
@@ -74,9 +74,9 @@ export default function LabelSelect() {
     const allHave = contacts.filter((c) => selectedContactIds.includes(c._id)).every((c) => c.labels.includes(lblId));
 
     if (allHave) {
-      await massDeassignLabel(selectedContactIds, lblId, userEmail);
+      await massDeassignLabel(selectedContactIds, lblname, lblId, userEmail);
     } else {
-      await massAssignLabel(selectedContactIds, lblId, userEmail);
+      await massAssignLabel(selectedContactIds, lblname, lblId, userEmail);
     }
   };
 
@@ -155,7 +155,7 @@ export default function LabelSelect() {
                 onPointerDown={(e) => {
                   if (isBulkMode) {
                     e.preventDefault(); // keep dropdown open
-                    makeToggleHandler(lbl._id)(); // run assign / de-assign
+                    makeToggleHandler(lbl.name, lbl._id)(); // run assign / de-assign
                   }
                   /*  not bulk mode?
                       do nothing: Radix will treat the click as a normal

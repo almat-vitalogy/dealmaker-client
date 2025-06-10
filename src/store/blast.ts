@@ -34,8 +34,8 @@ interface BlastState {
   labelStatus: LabelStatus;
   activeLabel: string;
 
-  massAssignLabel: (contactIds: string[], labelId: string, userEmail: string) => Promise<void>;
-  massDeassignLabel: (contactIds: string[], labelId: string, userEmail: string) => Promise<void>;
+  massAssignLabel: (contactIds: string[], labelName: string, labelId: string, userEmail: string) => Promise<void>;
+  massDeassignLabel: (contactIds: string[], labelName: string, labelId: string, userEmail: string) => Promise<void>;
   setActiveLabel: (labelId: string) => void;
   setLabels: (labels: Label[]) => void;
   setLabelStatus: (status: LabelStatus) => void;
@@ -80,7 +80,7 @@ export const useBlastStore = create<BlastState>()(
       labelStatus: "",
       activeLabel: "",
 
-      massAssignLabel: async (contactIds, labelId, userEmail) => {
+      massAssignLabel: async (contactIds, labelName, labelId, userEmail) => {
         if (!Array.isArray(contactIds) || !contactIds.length || !labelId) return;
 
         /* 0️⃣ snapshot current state for rollback */
@@ -93,7 +93,9 @@ export const useBlastStore = create<BlastState>()(
           );
 
           const labels = state.labels.map((lbl) =>
-            lbl._id === labelId ? { ...lbl, contactIds: Array.from(new Set([...lbl.contactIds, ...contactIds])) } : lbl
+            lbl._id === labelId
+              ? { ...lbl, contactIds: Array.from(new Set([...lbl.contactIds, ...contactIds])) }
+              : lbl
           );
 
           return { contacts, labels };
@@ -106,7 +108,7 @@ export const useBlastStore = create<BlastState>()(
             labelId,
             userEmail,
           });
-          await get().logActivity(userEmail, `mass-assigned label ${labelId} to ${contactIds.length} contacts`);
+          await get().logActivity(userEmail, `mass-assigned label ${labelName} to ${contactIds.length} contacts`);
         } catch (err) {
           console.error("❌ massAssignLabel:", err);
           /* 3️⃣ rollback */
@@ -114,7 +116,7 @@ export const useBlastStore = create<BlastState>()(
         }
       },
 
-      massDeassignLabel: async (contactIds, labelId, userEmail) => {
+      massDeassignLabel: async (contactIds, labelName, labelId, userEmail) => {
         if (!Array.isArray(contactIds) || !contactIds.length || !labelId) return;
 
         /* 0️⃣ snapshot current state for rollback */
@@ -127,7 +129,9 @@ export const useBlastStore = create<BlastState>()(
           );
 
           const labels = state.labels.map((lbl) =>
-            lbl._id === labelId ? { ...lbl, contactIds: lbl.contactIds.filter((id) => !contactIds.includes(id)) } : lbl
+            lbl._id === labelId
+              ? { ...lbl, contactIds: lbl.contactIds.filter((id) => !contactIds.includes(id)) }
+              : lbl
           );
 
           return { contacts, labels };
@@ -140,7 +144,7 @@ export const useBlastStore = create<BlastState>()(
             labelId,
             userEmail,
           });
-          await get().logActivity(userEmail, `mass-deassigned label ${labelId} from ${contactIds.length} contacts`);
+          await get().logActivity(userEmail, `mass-deassigned label ${labelName} from ${contactIds.length} contacts`);
         } catch (err) {
           console.error("❌ massDeassignLabel:", err);
           /* 3️⃣ rollback */
