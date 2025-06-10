@@ -56,7 +56,7 @@ interface BlastState {
   scrapeContacts: (userEmail: string) => Promise<void>;
   composeMessage: (goal: string, userEmail: string) => Promise<void>;
   clearStorage: () => void;
-  addContactToDB: (agentPhone: string, name: string, phone: string, userEmail2: string) => Promise<void>;
+  addContactToDB: (agentPhone: string, name: string, phone: string, userEmail2: string, massAction: boolean) => Promise<void>;
   deleteContactFromDB: (agentPhone: string, phone: string, userEmail: string) => Promise<void>;
 }
 
@@ -328,12 +328,12 @@ export const useBlastStore = create<BlastState>()(
 
           for (const phone of new Set(phoneNumbers)) {
             if (!get().contacts.some((c) => c.phone === phone)) {
-              await get().addContactToDB(userEmail, phone, phone, userEmail);
+              await get().addContactToDB(userEmail, phone, phone, userEmail, true);
             }
           }
 
           set({ contactStatus: "success" });
-          await get().logActivity(userEmail, "contacts scraped & saved");
+          await get().logActivity(userEmail, `contacts scraped & saved - ${phoneNumbers.length}`);
         } catch (error) {
           console.error("❌ scrapeContacts error:", error);
           set({ contactStatus: "error" });
@@ -385,7 +385,7 @@ export const useBlastStore = create<BlastState>()(
         });
       },
 
-      addContactToDB: async (userEmail, name, phone, userEmail2) => {
+      addContactToDB: async (userEmail, name, phone, userEmail2, massAction) => {
         try {
           const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/add/${userEmail}`, {
             name,
@@ -394,7 +394,7 @@ export const useBlastStore = create<BlastState>()(
           console.log(response);
           set((state) => ({ contacts: [...state.contacts, response.data.contact] }));
           console.log(`✅ ${name || "Unnamed Contact"} (${phone}) has been added successfully!`);
-          await get().logActivity(userEmail2, "contact added");
+          if(!massAction) await get().logActivity(userEmail2, "contact added");
         } catch (error) {
           console.error("❌ Error adding contact to DB:", error);
         }

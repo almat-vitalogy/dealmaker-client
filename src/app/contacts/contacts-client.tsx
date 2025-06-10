@@ -187,6 +187,7 @@ export default function ContactsClient({ user }: { user: any }) {
     contactStatus,
     setContacts,
     addContactToDB,
+    logActivity,
     deleteContactFromDB,
     qrCodeUrl,
     toggleLabel,
@@ -340,7 +341,7 @@ export default function ContactsClient({ user }: { user: any }) {
                 : `Contact ${formattedPhone}`;
 
             // Add to database using your existing function
-            await addContactToDB(userEmail, contactName, formattedPhone, userEmail2);
+            await addContactToDB(userEmail, contactName, formattedPhone, userEmail2, true);
             successCount++;
           } catch (error) {
             console.error(`Error adding contact ${contact.name || "Unknown"}:`, error);
@@ -357,6 +358,7 @@ export default function ContactsClient({ user }: { user: any }) {
       setImportMessage(
         `Successfully imported ${successCount} contacts${errorCount > 0 ? ` (${errorCount} failed)` : ""}`
       );
+      await logActivity(userEmail2, `contacts imported successfully - ${successCount}`);
       setVcfFile(null);
 
       // Clear the file input
@@ -532,7 +534,7 @@ export default function ContactsClient({ user }: { user: any }) {
                     }
 
                     try {
-                      addContactToDB(userEmail, trimmedName || trimmedPhone, trimmedPhone, userEmail2);
+                      addContactToDB(userEmail, trimmedName || trimmedPhone, trimmedPhone, userEmail2, false);
                       setName("");
                       setPhone("");
                     } catch (error) {
