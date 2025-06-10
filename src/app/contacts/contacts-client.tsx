@@ -563,6 +563,7 @@ export default function ContactsClient({ user }: { user: any }) {
 
                     try {
                       addContactToDB(userEmail, trimmedName || trimmedPhone, trimmedPhone, userEmail2, false);
+                      toast.success(`${trimmedName || trimmedPhone} has been added successfully!`);
                       setName("");
                       setPhone("");
                     } catch (error) {
@@ -673,7 +674,7 @@ export default function ContactsClient({ user }: { user: any }) {
                           <DialogDescription className="flex flex-col gap-1">
                             <span className="text-sm text-muted-foreground">Phone: {c.phone}</span>
                             {assignedLabels.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
+                              <span className="flex flex-wrap gap-1 mt-2">
                                 {assignedLabels.map((label) => (
                                   <span
                                     key={label._id}
@@ -683,7 +684,7 @@ export default function ContactsClient({ user }: { user: any }) {
                                     {label.name}
                                   </span>
                                 ))}
-                              </div>
+                              </span>
                             )}
                           </DialogDescription>
                         </DialogHeader>
