@@ -34,6 +34,8 @@ interface BlastState {
   labelStatus: LabelStatus;
   activeLabel: string;
 
+  massAssignLabel: (contactIds: string[], labelId: string, userEmail: string) => Promise<void>;
+  massDeassignLabel: (contactIds: string[], labelId: string, userEmail: string) => Promise<void>;
   setActiveLabel: (labelId: string) => void;
   setLabels: (labels: Label[]) => void;
   setLabelStatus: (status: LabelStatus) => void;
@@ -77,6 +79,74 @@ export const useBlastStore = create<BlastState>()(
       labels: [],
       labelStatus: "",
       activeLabel: "",
+
+      massAssignLabel: async (contactIds, labelId, userEmail) => {
+        if (!Array.isArray(contactIds) || !contactIds.length || !labelId) return;
+
+        /* 0️⃣ snapshot current state for rollback */
+        const { contacts: prevContacts, labels: prevLabels } = get();
+
+        /* 1️⃣ optimistic local update */
+        set((state) => {
+          const contacts = state.contacts.map((c) =>
+            contactIds.includes(c._id) && !c.labels.includes(labelId) ? { ...c, labels: [...c.labels, labelId] } : c
+          );
+
+          const labels = state.labels.map((lbl) =>
+            lbl._id === labelId ? { ...lbl, contactIds: Array.from(new Set([...lbl.contactIds, ...contactIds])) } : lbl
+          );
+
+          return { contacts, labels };
+        });
+
+        /* 2️⃣ API call */
+        try {
+          await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/mass-assign-label`, {
+            contactIds,
+            labelId,
+            userEmail,
+          });
+          await get().logActivity(userEmail, `label ${labelId} mass-assigned to ${contactIds.length} contacts`);
+        } catch (err) {
+          console.error("❌ massAssignLabel:", err);
+          /* 3️⃣ rollback */
+          set({ contacts: prevContacts, labels: prevLabels });
+        }
+      },
+
+      massDeassignLabel: async (contactIds, labelId, userEmail) => {
+        if (!Array.isArray(contactIds) || !contactIds.length || !labelId) return;
+
+        /* 0️⃣ snapshot current state for rollback */
+        const { contacts: prevContacts, labels: prevLabels } = get();
+
+        /* 1️⃣ optimistic local update */
+        set((state) => {
+          const contacts = state.contacts.map((c) =>
+            contactIds.includes(c._id) ? { ...c, labels: c.labels.filter((id) => id !== labelId) } : c
+          );
+
+          const labels = state.labels.map((lbl) =>
+            lbl._id === labelId ? { ...lbl, contactIds: lbl.contactIds.filter((id) => !contactIds.includes(id)) } : lbl
+          );
+
+          return { contacts, labels };
+        });
+
+        /* 2️⃣ API call */
+        try {
+          await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/mass-deassign-label`, {
+            contactIds,
+            labelId,
+            userEmail,
+          });
+          await get().logActivity(userEmail, `label ${labelId} mass-deassigned from ${contactIds.length} contacts`);
+        } catch (err) {
+          console.error("❌ massDeassignLabel:", err);
+          /* 3️⃣ rollback */
+          set({ contacts: prevContacts, labels: prevLabels });
+        }
+      },
 
       setActiveLabel: (labelId) => set({ activeLabel: labelId }),
       setLabels: (labels) => set({ labels }),
