@@ -7,7 +7,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { CheckCircle, Loader2, Send, XCircle, Upload, FileText, Search, Badge } from "lucide-react";
+import { CheckCircle, Loader2, Send, XCircle, Upload, FileText, Search, Badge, Trash2 } from "lucide-react";
 import { useBlastStore } from "@/store/blast";
 import LabelSelect from "@/components/label-select";
 import {
@@ -203,17 +203,7 @@ export default function ContactsClient({ user }: { user: any }) {
   const [importMessage, setImportMessage] = useState("");
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
 
-  // useEffect(() => {
-  //   if (!activeLabel) {
-  //     setSearchTerm("");
-  //     return;
-  //   }
-  //   const lbl = labels.find((l) => l._id === activeLabel);
-  //   if (lbl) setSearchTerm(lbl.name);
-  // }, [activeLabel, labels]);
-
   useEffect(() => {
-    console.log("updating");
     if (!Array.isArray(contacts)) {
       setFilteredContacts([]);
       return;
@@ -222,9 +212,15 @@ export default function ContactsClient({ user }: { user: any }) {
     const filtered = contacts.filter((contact) => {
       const q = searchTerm.toLowerCase();
 
+      // Get contact's assigned labels
+      const assignedLabels = labels.filter(
+        (label) => Array.isArray(label.contactIds) && label.contactIds.includes(contact._id)
+      );
+
       const matchesSearch =
         (contact.name && contact.name.toLowerCase().includes(q)) ||
-        (contact.phone && contact.phone.toLowerCase().includes(q));
+        (contact.phone && contact.phone.toLowerCase().includes(q)) ||
+        assignedLabels.some((label) => label.name && label.name.toLowerCase().includes(q));
 
       const matchesLabel = !activeLabel || contact.labels.includes(activeLabel);
 
@@ -232,7 +228,7 @@ export default function ContactsClient({ user }: { user: any }) {
     });
 
     setFilteredContacts(filtered);
-  }, [contacts, searchTerm, addContactToDB, activeLabel]);
+  }, [contacts, searchTerm, addContactToDB, activeLabel, labels]);
 
   useEffect(() => {
     if (!userEmail) return;
@@ -340,7 +336,7 @@ export default function ContactsClient({ user }: { user: any }) {
                 : `Contact ${formattedPhone}`;
 
             // Add to database using your existing function
-            await addContactToDB(userEmail, contactName, formattedPhone, userEmail2);
+            await addContactToDB(userEmail, contactName, formattedPhone, userEmail2); //
             successCount++;
           } catch (error) {
             console.error(`Error adding contact ${contact.name || "Unknown"}:`, error);
@@ -389,6 +385,32 @@ export default function ContactsClient({ user }: { user: any }) {
       } catch (error) {
         console.error("Error deleting contact:", error);
         alert("Failed to delete contact. Please try again.");
+      }
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (!Array.isArray(selectedContacts) || selectedContacts.length === 0) {
+      alert("No contacts selected for deletion");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${selectedContacts.length} selected contact${
+        selectedContacts.length > 1 ? "s" : ""
+      }?`
+    );
+
+    if (confirmed) {
+      try {
+        selectedContacts.forEach((phone) => {
+          selectContact(phone);
+          deleteContactFromDB(userEmail, phone, userEmail2);
+        });
+        alert(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
+      } catch (error) {
+        console.error("Error deleting selected contacts:", error);
+        alert("Failed to delete some contacts. Please try again.");
       }
     }
   };
@@ -549,133 +571,27 @@ export default function ContactsClient({ user }: { user: any }) {
             </CardContent>
           </Card>
 
-          {/* <Card className="border-none shadow-none">
-            <CardHeader className="flex flex-row items-center justify-between relative mx-5 p-0">
-              <Search className="absolute left-2 text-gray-500 h-5 w-5"></Search>
-              <Input
-                type="text"
-                placeholder="Search contact name or phone"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64 pl-9"
-              />
-              <div className="flex gap-5">
-                <LabelSelect></LabelSelect>
-                <Button
-                  variant="outline"
-                  // size="sm"
-                  onClick={toggleSelectAll}
-                  disabled={!filteredContacts.length}
-                  className="h-full"
-                >
-                  {areAllSelected
-                    ? `Deselect All (${filteredContacts.length})`
-                    : `Select All (${filteredContacts.length})`}
-                </Button>
-              </div>
-            </CardHeader>
-
-            <CardContent>
-              <div className="space-y-3 max-h-[250px] overflow-y-auto">
-                {filteredContacts.length === 0 && (
-                  <div className="text-center text-muted-foreground py-4">No contacts found.</div>
-                )}
-
-                {filteredContacts.map((c) => (
-                  <Dialog key={c.phone}>
-                    <DialogTrigger asChild>
-                      <div className="flex items-center justify-between border-b pb-2 cursor-pointer hover:bg-muted/30 rounded-md px-2">
-                        
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedContacts.includes(c.phone)}
-                            onChange={() => selectContact(c.phone)}
-                            className="mr-3 h-4 w-4"
-                          />
-                          <span>{c.name?.trim() || c.phone}</span>
-                        </div>
-
-                        <span className="text-muted-foreground flex items-center gap-2">
-                          {c.phone}
-                          <XCircle
-                            size={16}
-                            className="hover:text-red-500"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(c.name, c.phone);
-                            }}
-                          />
-                        </span>
-                        {labels
-                          .filter((lbl) => c.labelIds?.includes(lbl._id))
-                          .map((lbl) => (
-                            <span
-                              key={lbl._id}
-                              className="ml-1 px-1.5 py-0.5 rounded-sm text-[10px]/[14px] text-white"
-                              style={{ background: lbl.color ?? "#3b82f6" }}
-                            >
-                              {lbl.name}
-                            </span>
-                          ))}
-                      </div>
-                    </DialogTrigger>
-
-                    
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle className="text-lg">{c.name?.trim() || c.phone}</DialogTitle>
-                        <DialogDescription className="flex flex-col gap-1">
-                          <span className="text-sm text-muted-foreground">Phone: {c.phone}</span>
-                        </DialogDescription>
-                      </DialogHeader>
-
-                      
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        {labels.map((lbl) => {
-                          const checked = Array.isArray(c.labelIds) && c.labelIds.includes(lbl._id);
-                          return (
-                            <label
-                              key={lbl._id}
-                              className="flex items-center justify-between rounded-md px-2 py-1 hover:bg-muted/50 cursor-pointer"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={checked}
-                                  onCheckedChange={() => toggleLabel(c._id, lbl._id, userEmail2)}
-                                />
-                                <span>{lbl.name}</span>
-                              </div>
-                              
-                              <span
-                                className="inline-block w-3 h-3 rounded-sm"
-                                style={{ background: lbl.color ?? "#3b82f6" }}
-                              />
-                            </label>
-                          );
-                        })}
-
-                        {labels.length === 0 && <p className="text-muted-foreground text-sm">No labels yet.</p>}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                ))}
-              </div>
-            </CardContent>
-          </Card> */}
-
           <Card className="border-none shadow-none">
             <CardHeader className="flex flex-row items-center justify-between relative mx-5 p-0">
               <Search className="absolute left-2 text-gray-500 h-5 w-5"></Search>
               <Input
                 type="text"
-                placeholder="Search contact name or phone"
+                placeholder="Search name, phone, or label"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-64 pl-9"
               />
               <div className="flex gap-5">
                 <LabelSelect></LabelSelect>
+                <Button
+                  variant="outline"
+                  onClick={handleDeleteSelected}
+                  disabled={!selectedContacts.length}
+                  className="h-full"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Selected ({selectedContacts.length})
+                </Button>
                 <Button
                   variant="outline"
                   onClick={toggleSelectAll}
@@ -690,20 +606,17 @@ export default function ContactsClient({ user }: { user: any }) {
             </CardHeader>
 
             <CardContent>
-              <div className="space-y-3 max-h-[250px] overflow-y-auto">
+              <div className="space-y-3 max-h-[380px] overflow-y-auto">
                 {filteredContacts.length === 0 && (
                   <div className="text-center text-muted-foreground py-4">No contacts found.</div>
                 )}
 
                 {filteredContacts.map((c) => {
-                  // Get assigned labels for this contact
                   const assignedLabels = labels.filter(
                     (label) => Array.isArray(label.contactIds) && label.contactIds.includes(c._id)
                   );
-
                   return (
                     <Dialog key={c.phone}>
-                      {/* ╭─ Contact row (DialogTrigger) ──────────────────────╮ */}
                       <DialogTrigger asChild>
                         <div className="flex items-center justify-between border-b pb-2 cursor-pointer hover:bg-muted/30 rounded-md px-2">
                           <div className="flex gap-10">
@@ -746,13 +659,11 @@ export default function ContactsClient({ user }: { user: any }) {
                         </div>
                       </DialogTrigger>
 
-                      {/* ╰─ Dialog content ───────────────────────────────────╯ */}
                       <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                           <DialogTitle className="text-lg">{c.name?.trim() || c.phone}</DialogTitle>
                           <DialogDescription className="flex flex-col gap-1">
                             <span className="text-sm text-muted-foreground">Phone: {c.phone}</span>
-                            {/* Show assigned labels in dialog header */}
                             {assignedLabels.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-2">
                                 {assignedLabels.map((label) => (
@@ -769,7 +680,6 @@ export default function ContactsClient({ user }: { user: any }) {
                           </DialogDescription>
                         </DialogHeader>
 
-                        {/* Label checklist */}
                         <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                           {labels.map((lbl) => {
                             const checked = Array.isArray(lbl.contactIds) && lbl.contactIds.includes(c._id);
@@ -787,7 +697,6 @@ export default function ContactsClient({ user }: { user: any }) {
                                   />
                                   <span>{lbl.name}</span>
                                 </div>
-                                {/* small color square */}
                                 <span
                                   className="inline-block w-3 h-3 rounded-sm"
                                   style={{ background: lbl.color ?? "#3b82f6" }}
@@ -805,118 +714,6 @@ export default function ContactsClient({ user }: { user: any }) {
               </div>
             </CardContent>
           </Card>
-
-          {/* <Card className="border-none shadow-none">
-           
-            <CardHeader className="flex flex-row items-center justify-between relative mx-5 p-0">
-             
-              <Search className="absolute left-2 text-gray-500 h-5 w-5" />
-              <Input
-                placeholder="Search contact name or phone"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64 pl-9"
-              />
-
-             
-              <div className="flex gap-3 items-center">
-               
-                {labels.map((lbl) => (
-                  <Badge
-                    key={lbl._id}
-                    variant={activeLabel === lbl._id ? "default" : "secondary"}
-                    className="cursor-pointer select-none"
-                    onClick={() => handleLabelChipClick(lbl._id, lbl.name)}
-                  >
-                    {lbl.name}
-                  </Badge>
-                ))}
-
-               
-                <Button variant="outline" onClick={toggleSelectAll} disabled={!filteredContacts.length}>
-                  {areAllSelected
-                    ? `Deselect All (${filteredContacts.length})`
-                    : `Select All (${filteredContacts.length})`}
-                </Button>
-              </div>
-            </CardHeader>
-
-           
-            <CardContent>
-              <div className="space-y-3 max-h-[250px] overflow-y-auto">
-                {filteredContacts.length === 0 && (
-                  <div className="text-center text-muted-foreground py-4">No contacts found.</div>
-                )}
-
-                {filteredContacts.map((c) => (
-                  <Dialog key={c._id}>
-                   
-                    <DialogTrigger asChild>
-                      <div className="flex items-center justify-between border-b pb-2 cursor-pointer hover:bg-muted/30 rounded-md px-2">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedContacts.includes(c.phone)}
-                            onChange={() => selectContact(c.phone)}
-                            className="mr-3 h-4 w-4"
-                          />
-                          <span>{c.name?.trim() || c.phone}</span>
-                        </div>
-                        <span className="text-muted-foreground flex items-center gap-2">
-                          {c.phone}
-                          <XCircle
-                            size={16}
-                            className="hover:text-red-500"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(c.name, c.phone);
-                            }}
-                          />
-                        </span>
-                      </div>
-                    </DialogTrigger>
-
-                   
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle className="text-lg">{c.name?.trim() || c.phone}</DialogTitle>
-                        <DialogDescription className="flex flex-col gap-1">
-                          <span className="text-sm text-muted-foreground">Phone: {c.phone}</span>
-                        </DialogDescription>
-                      </DialogHeader>
-
-                     
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        {labels.map((lbl) => {
-                          const checked = Array.isArray(c.labelIds) && c.labelIds.includes(lbl._id);
-                          return (
-                            <label
-                              key={lbl._id}
-                              className="flex items-center justify-between rounded-md px-2 py-1 hover:bg-muted/50 cursor-pointer"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={checked}
-                                  onCheckedChange={() => toggleLabel(c._id, lbl._id, userEmail2)}
-                                />
-                                <span>{lbl.name}</span>
-                              </div>
-                              <span
-                                className="inline-block w-3 h-3 rounded-sm"
-                                style={{ background: lbl.color ?? "#3b82f6" }}
-                              />
-                            </label>
-                          );
-                        })}
-
-                        {labels.length === 0 && <p className="text-muted-foreground text-sm">No labels yet.</p>}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                ))}
-              </div>
-            </CardContent>
-          </Card> */}
         </div>
       </SidebarInset>
     </SidebarProvider>
