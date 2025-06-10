@@ -7,6 +7,8 @@ import { CheckCircle, Loader2, Search, Send, Trash2, XCircle } from "lucide-reac
 import { useBlastStore } from "@/store/blast";
 import LabelSelect from "../label-select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
+import { toast } from "sonner";
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
 
 interface ContactsStepProps {
   user?: any;
@@ -35,6 +37,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
     toggleLabel,
     logActivity,
   } = useBlastStore();
+  const confirm = useConfirmDialog();
 
   useEffect(() => {
     if (!Array.isArray(contacts)) {
@@ -78,25 +81,28 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
     fetchContacts();
   }, [userEmail, setContacts]);
 
-  const handleDelete = (name: string, phone: string) => {
-    const confirmed = window.confirm(`Are you sure you want to delete ${name || phone}?`);
+  const handleDelete = async (name: string, phone: string) => {
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete ${name || phone}?`,
+      description: "This action cannot be undone.",
+    });
     if (confirmed) {
       deleteContactFromDB(userEmail, phone, userEmail2, false);
-      alert(`${name || phone} has been deleted!`);
+      toast.success(`${name || phone} has been deleted!`);
     }
   };
 
   const handleDeleteSelected = async () => {
     if (!Array.isArray(selectedContacts) || selectedContacts.length === 0) {
-      alert("No contacts selected for deletion");
+      toast.error("No contacts selected for deletion");
       return;
     }
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete ${selectedContacts.length} selected contact${
-        selectedContacts.length > 1 ? "s" : ""
-      }?`
-    );
+    const confirmed = await confirm({
+        title: `Delete ${selectedContacts.length} contact${selectedContacts.length > 1 ? "s" : ""}?`,
+        description: "This action cannot be undone.",
+      });
+      
 
     if (confirmed) {
       try {
@@ -105,10 +111,10 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
           deleteContactFromDB(userEmail, phone, userEmail2, true);
         });
         await logActivity(userEmail2, `contacts deleted successfully - ${selectedContacts.length}`);
-        alert(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
+        toast.success(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
       } catch (error) {
         console.error("Error deleting selected contacts:", error);
-        alert("Failed to delete some contacts. Please try again.");
+        toast.error("Failed to delete some contacts. Please try again.");
       }
     }
   };

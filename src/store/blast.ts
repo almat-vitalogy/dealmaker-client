@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "sonner";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
@@ -352,7 +353,7 @@ export const useBlastStore = create<BlastState>()(
 
         if (!userId || !message || selectedContacts.length === 0 || !title) {
           console.warn("❗ Missing userId, message, or selected contacts, or title");
-          alert("Please ensure you have selected contacts, entered a message, and provided a title.");
+          toast.error("Please ensure you have selected contacts, entered a message, and provided a title.");
           return;
         }
         set({ messageStatus: "loading" });
@@ -444,7 +445,7 @@ export const useBlastStore = create<BlastState>()(
       },
 
       clearStorage: () => {
-        window.confirm(`Are you sure you want to logout?`);
+        // window.confirm(`Are you sure you want to logout?`);
         get().disconnectUser(get().userEmail);
         set({
           contacts: [],

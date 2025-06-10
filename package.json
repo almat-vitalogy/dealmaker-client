@@ -53,7 +53,7 @@
     "react-hook-form": "^7.56.1",
     "recharts": "^2.15.3",
     "socket.io-client": "^4.8.1",
-    "sonner": "^2.0.3",
+    "sonner": "^2.0.5",
     "stripe": "^18.2.0",
     "tailwind-merge": "^3.2.0",
     "vaul": "^1.1.2",

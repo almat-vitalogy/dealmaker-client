@@ -1,5 +1,6 @@
 import { loadStripe } from '@stripe/stripe-js';
 import axios from "axios";
+import { toast } from "sonner";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -12,7 +13,7 @@ export const redirectToCheckout = async (items: { id: string; quantity: number }
     window.location.href = response.data.url;
   } catch (error) {
     console.error("Stripe Checkout error:", error);
-    alert("Failed to redirect to checkout.");
+    toast.error("Failed to redirect to checkout.");
   }
 };
 

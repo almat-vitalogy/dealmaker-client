@@ -19,6 +19,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@radix-ui/react-checkbox";
+import {toast} from "sonner";
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
 
 // VCF Parser Classes
 class VCFParser {
@@ -203,6 +205,7 @@ export default function ContactsClient({ user }: { user: any }) {
   const [importStatus, setImportStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [importMessage, setImportMessage] = useState("");
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
+  const confirm = useConfirmDialog();
 
   useEffect(() => {
     if (!Array.isArray(contacts)) {
@@ -250,7 +253,7 @@ export default function ContactsClient({ user }: { user: any }) {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.name.toLowerCase().endsWith(".vcf")) {
-        alert("Please select a .vcf file");
+        toast.error("Please select a .vcf file");
         return;
       }
       setVcfFile(file);
@@ -261,7 +264,7 @@ export default function ContactsClient({ user }: { user: any }) {
 
   const handleVcfImport = async () => {
     if (!vcfFile) {
-      alert("Please select a VCF file first");
+      toast.error("Please select a VCF file first");
       return;
     }
 
@@ -371,37 +374,39 @@ export default function ContactsClient({ user }: { user: any }) {
     }
   };
 
-  const handleDelete = (name: string | null | undefined, phone: string | null | undefined) => {
+  const handleDelete = async (name: string | null | undefined, phone: string | null | undefined) => {
     if (!phone) {
       console.error("Cannot delete contact: phone number is missing");
       return;
     }
 
     const displayName = name && name.trim() ? name.trim() : phone;
-    const confirmed = window.confirm(`Are you sure you want to delete ${displayName}?`);
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete ${displayName}?`,
+      description: "This action cannot be undone.",
+    });
 
     if (confirmed) {
       try {
         deleteContactFromDB(userEmail, phone, userEmail2, false);
-        alert(`${displayName} has been deleted!`);
+        toast.success(`${displayName} has been deleted!`);
       } catch (error) {
         console.error("Error deleting contact:", error);
-        alert("Failed to delete contact. Please try again.");
+        toast.error("Failed to delete contact. Please try again.");
       }
     }
   };
 
   const handleDeleteSelected = async () => {
     if (!Array.isArray(selectedContacts) || selectedContacts.length === 0) {
-      alert("No contacts selected for deletion");
+      toast.error("No contacts selected for deletion");
       return;
     }
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete ${selectedContacts.length} selected contact${
-        selectedContacts.length > 1 ? "s" : ""
-      }?`
-    );
+    const confirmed = await confirm({
+      title: `Delete ${selectedContacts.length} contact${selectedContacts.length > 1 ? "s" : ""}?`,
+      description: "This action cannot be undone.",
+    });
 
     if (confirmed) {
       try {
@@ -410,10 +415,10 @@ export default function ContactsClient({ user }: { user: any }) {
           deleteContactFromDB(userEmail, phone, userEmail2,true);
         });
         await logActivity(userEmail2, `contacts deleted successfully - ${selectedContacts.length}`);
-        alert(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
+        toast.success(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
       } catch (error) {
         console.error("Error deleting selected contacts:", error);
-        alert("Failed to delete some contacts. Please try again.");
+        toast.error("Failed to delete some contacts. Please try again.");
       }
     }
   };
@@ -552,7 +557,7 @@ export default function ContactsClient({ user }: { user: any }) {
                     const trimmedPhone = phone.trim();
 
                     if (!trimmedPhone) {
-                      alert("Please enter a phone number");
+                      toast.error("Please enter a phone number");
                       return;
                     }
 
@@ -562,7 +567,7 @@ export default function ContactsClient({ user }: { user: any }) {
                       setPhone("");
                     } catch (error) {
                       console.error("Error adding contact:", error);
-                      alert("Failed to add contact. Please try again.");
+                      toast.error("Failed to add contact. Please try again.");
                     }
                   }}
                   className="w-full"
