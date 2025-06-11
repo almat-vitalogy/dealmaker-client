@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -119,20 +119,30 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
     }
   };
 
-  const areAllSelected = contacts.length > 0 && contacts.every((c) => selectedContacts.includes(c.phone));
-
+  const areAllSelected = useMemo(() => {
+      return (
+        Array.isArray(filteredContacts) &&
+        filteredContacts.length > 0 &&
+        filteredContacts.every((c) => c?.phone && Array.isArray(selectedContacts) && selectedContacts.includes(c.phone))
+      );
+    }, [filteredContacts, selectedContacts]);
   const toggleSelectAll = () => {
+    if (!Array.isArray(filteredContacts) || !Array.isArray(selectedContacts)) {
+      console.error("Filtered contacts or selectedContacts is not an array");
+      return;
+    }
+
     if (areAllSelected) {
-      // Deselect all
-      contacts.forEach((c) => {
-        if (selectedContacts.includes(c.phone)) {
+      // Deselect all filtered contacts
+      filteredContacts.forEach((c) => {
+        if (c?.phone && selectedContacts.includes(c.phone)) {
           selectContact(c.phone);
         }
       });
     } else {
-      // Select all
-      contacts.forEach((c) => {
-        if (!selectedContacts.includes(c.phone)) {
+      // Select all filtered contacts
+      filteredContacts.forEach((c) => {
+        if (c?.phone && !selectedContacts.includes(c.phone)) {
           selectContact(c.phone);
         }
       });
@@ -232,7 +242,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
                       <DialogDescription className="flex flex-col gap-1">
                         <span className="text-sm text-muted-foreground">Phone: {c.phone}</span>
                         {assignedLabels.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
+                          <span className="flex flex-wrap gap-1 mt-2">
                             {assignedLabels.map((label) => (
                               <span
                                 key={label._id}
@@ -242,7 +252,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
                                 {label.name}
                               </span>
                             ))}
-                          </div>
+                          </span>
                         )}
                       </DialogDescription>
                     </DialogHeader>
