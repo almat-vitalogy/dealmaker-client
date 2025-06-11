@@ -37,7 +37,7 @@ const MessageStep = ({ user }: any) => {
           <CardTitle>Message Editor</CardTitle>
         </CardHeader>
         <CardContent className="-mt-5">
-          <div className="relative space-y-2 max-h-[440px] border rounded-md">
+          <div className="relative space-y-2 max-h-[350px] border rounded-md">
             <textarea
               className="w-full h-48 p-3 mb-5 resize-none focus:outline-none "
               placeholder="Type your message here, or use AI to rewrite it..."

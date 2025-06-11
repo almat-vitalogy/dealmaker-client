@@ -86,14 +86,14 @@ const ScheduleStep = ({ user }: any) => {
                 {selectedContacts.length == 0 && <span className="text-muted-foreground">No recipients</span>}
               </div>
             </div>
-
-            <div>
               <CardTitle className="mb-2">Message Content</CardTitle>
-              <div className="bg-muted p-3 rounded-md max-h-[350px] overflow-auto">
-                {message || <span className="text-muted-foreground">No message content</span>}
-              </div>
+              {/* <div className="bg-muted p-3 whitespace-pre-wrap rounded-md max-h-screen/ overflow-y-"> */}
+              <textarea
+                className="bg-muted w-full h-54 p-3 mb-5 resize-none rounded-md focus:outline-offset-1" 
+                disabled
+                value={message || "No message content"}
+              ></textarea>
             </div>
-          </div>
         </CardContent>
 
         <CardHeader></CardHeader>
