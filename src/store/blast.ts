@@ -216,6 +216,37 @@ export const useBlastStore = create<BlastState>()(
         if (!labelId) return;
         set({ labelStatus: "loading" });
         try {
+          
+          //remove labelIds from contacts on deleting label
+          const labelToDelete = get().labels.find((l) => l._id === labelId);
+          const contactIds = labelToDelete?.contactIds || [];
+
+          await Promise.all(
+            contactIds.map((contactId) =>
+              axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/toggle-label`, {
+                contactId,
+                labelId,
+                userEmail,
+              })
+            )
+          );
+
+          //updating state
+          set((state) => {
+            const labels = state.labels.filter((l) => l._id !== labelId);
+
+            const contacts = state.contacts.map((c) => {
+              if (!contactIds.includes(c._id)) return c;
+              return {
+                ...c,
+                labels: (c.labels || []).filter((id) => id !== labelId),
+              };
+            });
+
+            return { labels, contacts, labelStatus: "success" };
+          });
+          //end of remove labelIds from contacts
+
           await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/delete-label/${labelId}`);
           set((s) => ({
             labels: s.labels.filter((l) => l._id !== labelId),
@@ -477,6 +508,46 @@ export const useBlastStore = create<BlastState>()(
 
       deleteContactFromDB: async (agentPhone, phone, userEmail, massAction) => {
         try {
+
+          //remove contactIds from labels on deleting contact
+          const contactToDelete = get().contacts.find((c) => c.phone === phone);
+          const contactId = contactToDelete?._id || "";
+          const labelIds = contactToDelete?.labels || [];
+
+          await Promise.all(
+            labelIds.map((labelId) =>
+              axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/toggle-label`, {
+                contactId,
+                labelId,
+                userEmail,
+              })
+            )
+          );
+          
+          //updating state
+          set((state) => {
+            const labels = state.labels.map((lbl) => {
+              if (!labelIds.includes(lbl._id)) return lbl;
+              return {
+                ...lbl,
+                contactIds: lbl.contactIds.filter((id) => id !== contactId),
+              };
+            });
+
+            const contacts = state.contacts
+              .filter((c) => c.phone !== phone) // Remove the deleted contact
+              .map((c) => {
+                if (c._id !== contactId) return c;
+                return {
+                  ...c,
+                  labels: [], // clear labels from deleted contact
+                };
+              });
+
+            return { contacts, labels };
+          });
+          //end of removing contactIds from labels
+
           await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/delete/${agentPhone}/${phone}`);
           set((state) => ({ contacts: state.contacts.filter((c) => c.phone !== phone) }));
           if (!massAction) await get().logActivity(userEmail, "contact deleted");
