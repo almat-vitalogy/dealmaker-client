@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "sonner";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
@@ -34,8 +35,8 @@ interface BlastState {
   labelStatus: LabelStatus;
   activeLabel: string;
 
-  massAssignLabel: (contactIds: string[], labelId: string, userEmail: string) => Promise<void>;
-  massDeassignLabel: (contactIds: string[], labelId: string, userEmail: string) => Promise<void>;
+  massAssignLabel: (contactIds: string[], labelName: string, labelId: string, userEmail: string) => Promise<void>;
+  massDeassignLabel: (contactIds: string[], labelName: string, labelId: string, userEmail: string) => Promise<void>;
   setActiveLabel: (labelId: string) => void;
   setLabels: (labels: Label[]) => void;
   setLabelStatus: (status: LabelStatus) => void;
@@ -58,8 +59,8 @@ interface BlastState {
   scrapeContacts: (userEmail: string) => Promise<void>;
   composeMessage: (goal: string, userEmail: string) => Promise<void>;
   clearStorage: () => void;
-  addContactToDB: (agentPhone: string, name: string, phone: string, userEmail2: string) => Promise<void>;
-  deleteContactFromDB: (agentPhone: string, phone: string, userEmail: string) => Promise<void>;
+  addContactToDB: (agentPhone: string, name: string, phone: string, userEmail2: string, massAction: boolean) => Promise<void>;
+  deleteContactFromDB: (agentPhone: string, phone: string, userEmail: string, massAction: boolean) => Promise<void>;
 }
 
 export const useBlastStore = create<BlastState>()(
@@ -80,7 +81,7 @@ export const useBlastStore = create<BlastState>()(
       labelStatus: "",
       activeLabel: "",
 
-      massAssignLabel: async (contactIds, labelId, userEmail) => {
+      massAssignLabel: async (contactIds, labelName, labelId, userEmail) => {
         if (!Array.isArray(contactIds) || !contactIds.length || !labelId) return;
 
         /* 0️⃣ snapshot current state for rollback */
@@ -93,7 +94,9 @@ export const useBlastStore = create<BlastState>()(
           );
 
           const labels = state.labels.map((lbl) =>
-            lbl._id === labelId ? { ...lbl, contactIds: Array.from(new Set([...lbl.contactIds, ...contactIds])) } : lbl
+            lbl._id === labelId
+              ? { ...lbl, contactIds: Array.from(new Set([...lbl.contactIds, ...contactIds])) }
+              : lbl
           );
 
           return { contacts, labels };
@@ -106,7 +109,7 @@ export const useBlastStore = create<BlastState>()(
             labelId,
             userEmail,
           });
-          await get().logActivity(userEmail, `label ${labelId} mass-assigned to ${contactIds.length} contacts`);
+          await get().logActivity(userEmail, `mass-assigned label ${labelName} to ${contactIds.length} contacts`);
         } catch (err) {
           console.error("❌ massAssignLabel:", err);
           /* 3️⃣ rollback */
@@ -114,7 +117,7 @@ export const useBlastStore = create<BlastState>()(
         }
       },
 
-      massDeassignLabel: async (contactIds, labelId, userEmail) => {
+      massDeassignLabel: async (contactIds, labelName, labelId, userEmail) => {
         if (!Array.isArray(contactIds) || !contactIds.length || !labelId) return;
 
         /* 0️⃣ snapshot current state for rollback */
@@ -127,7 +130,9 @@ export const useBlastStore = create<BlastState>()(
           );
 
           const labels = state.labels.map((lbl) =>
-            lbl._id === labelId ? { ...lbl, contactIds: lbl.contactIds.filter((id) => !contactIds.includes(id)) } : lbl
+            lbl._id === labelId
+              ? { ...lbl, contactIds: lbl.contactIds.filter((id) => !contactIds.includes(id)) }
+              : lbl
           );
 
           return { contacts, labels };
@@ -140,7 +145,7 @@ export const useBlastStore = create<BlastState>()(
             labelId,
             userEmail,
           });
-          await get().logActivity(userEmail, `label ${labelId} mass-deassigned from ${contactIds.length} contacts`);
+          await get().logActivity(userEmail, `mass-deassigned label ${labelName} from ${contactIds.length} contacts`);
         } catch (err) {
           console.error("❌ massDeassignLabel:", err);
           /* 3️⃣ rollback */
@@ -211,6 +216,37 @@ export const useBlastStore = create<BlastState>()(
         if (!labelId) return;
         set({ labelStatus: "loading" });
         try {
+          
+          //remove labelIds from contacts on deleting label
+          const labelToDelete = get().labels.find((l) => l._id === labelId);
+          const contactIds = labelToDelete?.contactIds || [];
+
+          await Promise.all(
+            contactIds.map((contactId) =>
+              axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/toggle-label`, {
+                contactId,
+                labelId,
+                userEmail,
+              })
+            )
+          );
+
+          //updating state
+          set((state) => {
+            const labels = state.labels.filter((l) => l._id !== labelId);
+
+            const contacts = state.contacts.map((c) => {
+              if (!contactIds.includes(c._id)) return c;
+              return {
+                ...c,
+                labels: (c.labels || []).filter((id) => id !== labelId),
+              };
+            });
+
+            return { labels, contacts, labelStatus: "success" };
+          });
+          //end of remove labelIds from contacts
+
           await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/delete-label/${labelId}`);
           set((s) => ({
             labels: s.labels.filter((l) => l._id !== labelId),
@@ -348,7 +384,7 @@ export const useBlastStore = create<BlastState>()(
 
         if (!userId || !message || selectedContacts.length === 0 || !title) {
           console.warn("❗ Missing userId, message, or selected contacts, or title");
-          alert("Please ensure you have selected contacts, entered a message, and provided a title.");
+          toast.error("Please ensure you have selected contacts, entered a message, and provided a title.");
           return;
         }
         set({ messageStatus: "loading" });
@@ -398,12 +434,12 @@ export const useBlastStore = create<BlastState>()(
 
           for (const phone of new Set(phoneNumbers)) {
             if (!get().contacts.some((c) => c.phone === phone)) {
-              await get().addContactToDB(userEmail, phone, phone, userEmail);
+              await get().addContactToDB(userEmail, phone, phone, userEmail, true);
             }
           }
 
           set({ contactStatus: "success" });
-          await get().logActivity(userEmail, "contacts scraped & saved");
+          await get().logActivity(userEmail, `contacts scraped & saved - ${phoneNumbers.length}`);
         } catch (error) {
           console.error("❌ scrapeContacts error:", error);
           set({ contactStatus: "error" });
@@ -440,7 +476,7 @@ export const useBlastStore = create<BlastState>()(
       },
 
       clearStorage: () => {
-        window.confirm(`Are you sure you want to logout?`);
+        // window.confirm(`Are you sure you want to logout?`);
         get().disconnectUser(get().userEmail);
         set({
           contacts: [],
@@ -455,7 +491,7 @@ export const useBlastStore = create<BlastState>()(
         });
       },
 
-      addContactToDB: async (userEmail, name, phone, userEmail2) => {
+      addContactToDB: async (userEmail, name, phone, userEmail2, massAction) => {
         try {
           const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/add/${userEmail}`, {
             name,
@@ -464,18 +500,58 @@ export const useBlastStore = create<BlastState>()(
           console.log(response);
           set((state) => ({ contacts: [...state.contacts, response.data.contact] }));
           console.log(`✅ ${name || "Unnamed Contact"} (${phone}) has been added successfully!`);
-          await get().logActivity(userEmail2, "contact added");
+          if(!massAction) await get().logActivity(userEmail2, "contact added");
         } catch (error) {
           console.error("❌ Error adding contact to DB:", error);
         }
       },
 
-      deleteContactFromDB: async (agentPhone, phone, userEmail) => {
+      deleteContactFromDB: async (agentPhone, phone, userEmail, massAction) => {
         try {
+
+          //remove contactIds from labels on deleting contact
+          const contactToDelete = get().contacts.find((c) => c.phone === phone);
+          const contactId = contactToDelete?._id || "";
+          const labelIds = contactToDelete?.labels || [];
+
+          await Promise.all(
+            labelIds.map((labelId) =>
+              axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/toggle-label`, {
+                contactId,
+                labelId,
+                userEmail,
+              })
+            )
+          );
+          
+          //updating state
+          set((state) => {
+            const labels = state.labels.map((lbl) => {
+              if (!labelIds.includes(lbl._id)) return lbl;
+              return {
+                ...lbl,
+                contactIds: lbl.contactIds.filter((id) => id !== contactId),
+              };
+            });
+
+            const contacts = state.contacts
+              .filter((c) => c.phone !== phone) // Remove the deleted contact
+              .map((c) => {
+                if (c._id !== contactId) return c;
+                return {
+                  ...c,
+                  labels: [], // clear labels from deleted contact
+                };
+              });
+
+            return { contacts, labels };
+          });
+          //end of removing contactIds from labels
+
           await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/delete/${agentPhone}/${phone}`);
           set((state) => ({ contacts: state.contacts.filter((c) => c.phone !== phone) }));
+          if (!massAction) await get().logActivity(userEmail, "contact deleted");
           console.log(`🗑️ Contact (${phone}) has been deleted successfully!`);
-          await get().logActivity(userEmail, "contact deleted");
         } catch (error) {
           console.error("❌ Error deleting contact from DB:", error);
         }

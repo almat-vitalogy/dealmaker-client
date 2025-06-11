@@ -67,6 +67,14 @@ function Carousel({ orientation = "horizontal", opts, setApi, plugins, className
 
   const handleKeyDown = React.useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
+      
+      const target = event.target as HTMLElement;
+      const tagName = target.tagName.toLowerCase();
+
+      if (tagName === "input" || tagName === "textarea" || target.isContentEditable) {
+        return; // Don't intercept if focus is on editable content
+      }
+
       if (event.key === "ArrowLeft") {
         event.preventDefault();
         scrollPrev();

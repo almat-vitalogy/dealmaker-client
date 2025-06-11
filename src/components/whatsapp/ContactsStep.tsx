@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,8 @@ import { CheckCircle, Loader2, Search, Send, Trash2, XCircle } from "lucide-reac
 import { useBlastStore } from "@/store/blast";
 import LabelSelect from "../label-select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
+import { toast } from "sonner";
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
 
 interface ContactsStepProps {
   user?: any;
@@ -33,7 +35,9 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
     labels,
     activeLabel,
     toggleLabel,
+    logActivity,
   } = useBlastStore();
+  const confirm = useConfirmDialog();
 
   useEffect(() => {
     if (!Array.isArray(contacts)) {
@@ -77,54 +81,68 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
     fetchContacts();
   }, [userEmail, setContacts]);
 
-  const handleDelete = (name: string, phone: string) => {
-    const confirmed = window.confirm(`Are you sure you want to delete ${name || phone}?`);
+  const handleDelete = async (name: string, phone: string) => {
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete ${name || phone}?`,
+      description: "This action cannot be undone.",
+    });
     if (confirmed) {
-      deleteContactFromDB(userEmail, phone, userEmail2);
-      alert(`${name || phone} has been deleted!`);
+      deleteContactFromDB(userEmail, phone, userEmail2, false);
+      toast.success(`${name || phone} has been deleted!`);
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (!Array.isArray(selectedContacts) || selectedContacts.length === 0) {
-      alert("No contacts selected for deletion");
+      toast.error("No contacts selected for deletion");
       return;
     }
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete ${selectedContacts.length} selected contact${
-        selectedContacts.length > 1 ? "s" : ""
-      }?`
-    );
+    const confirmed = await confirm({
+        title: `Delete ${selectedContacts.length} contact${selectedContacts.length > 1 ? "s" : ""}?`,
+        description: "This action cannot be undone.",
+      });
+      
 
     if (confirmed) {
       try {
         selectedContacts.forEach((phone) => {
           selectContact(phone);
-          deleteContactFromDB(userEmail, phone, userEmail2);
+          deleteContactFromDB(userEmail, phone, userEmail2, true);
         });
-        alert(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
+        await logActivity(userEmail2, `contacts deleted successfully - ${selectedContacts.length}`);
+        toast.success(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
       } catch (error) {
         console.error("Error deleting selected contacts:", error);
-        alert("Failed to delete some contacts. Please try again.");
+        toast.error("Failed to delete some contacts. Please try again.");
       }
     }
   };
 
-  const areAllSelected = contacts.length > 0 && contacts.every((c) => selectedContacts.includes(c.phone));
-
+  const areAllSelected = useMemo(() => {
+      return (
+        Array.isArray(filteredContacts) &&
+        filteredContacts.length > 0 &&
+        filteredContacts.every((c) => c?.phone && Array.isArray(selectedContacts) && selectedContacts.includes(c.phone))
+      );
+    }, [filteredContacts, selectedContacts]);
   const toggleSelectAll = () => {
+    if (!Array.isArray(filteredContacts) || !Array.isArray(selectedContacts)) {
+      console.error("Filtered contacts or selectedContacts is not an array");
+      return;
+    }
+
     if (areAllSelected) {
-      // Deselect all
-      contacts.forEach((c) => {
-        if (selectedContacts.includes(c.phone)) {
+      // Deselect all filtered contacts
+      filteredContacts.forEach((c) => {
+        if (c?.phone && selectedContacts.includes(c.phone)) {
           selectContact(c.phone);
         }
       });
     } else {
-      // Select all
-      contacts.forEach((c) => {
-        if (!selectedContacts.includes(c.phone)) {
+      // Select all filtered contacts
+      filteredContacts.forEach((c) => {
+        if (c?.phone && !selectedContacts.includes(c.phone)) {
           selectContact(c.phone);
         }
       });
@@ -165,7 +183,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
         </CardHeader>
 
         <CardContent>
-          <div className="space-y-3 max-h-[380px] overflow-y-auto">
+          <div className="space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto">
             {filteredContacts.length === 0 && (
               <div className="text-center text-muted-foreground py-4">No contacts found.</div>
             )}
@@ -224,7 +242,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
                       <DialogDescription className="flex flex-col gap-1">
                         <span className="text-sm text-muted-foreground">Phone: {c.phone}</span>
                         {assignedLabels.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
+                          <span className="flex flex-wrap gap-1 mt-2">
                             {assignedLabels.map((label) => (
                               <span
                                 key={label._id}
@@ -234,7 +252,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
                                 {label.name}
                               </span>
                             ))}
-                          </div>
+                          </span>
                         )}
                       </DialogDescription>
                     </DialogHeader>
@@ -276,5 +294,4 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
     </div>
   );
 };
-
 export default ContactsStep;

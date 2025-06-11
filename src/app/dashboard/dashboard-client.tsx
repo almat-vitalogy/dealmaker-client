@@ -295,7 +295,7 @@ export default function DashboardClient({ user }: { user: any }) {
                     <div className="flex items-center gap-3">
                       <Clock className="w-5 h-5 mt-1" />
                       <p className="flex-1">
-                        2. After scanning, wait for <strong>30 seconds</strong>.
+                        2. Scan the QR using Whatsapp Link Device and wait for <strong>30 seconds</strong>.
                       </p>
                     </div>
                     <div className="flex items-center gap-3">

@@ -57,7 +57,7 @@ export default function WebControllerClient({ user }: { user: any }) {
       <AppSidebar variant="inset" user={user} />
       <SidebarInset>
         <SiteHeader left="Blast Message" right="" />
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 h-full">
           {/* <div className="w-full flex gap-6">
             <Card className="p-6 w-1/3">
               <CardHeader>
@@ -122,12 +122,12 @@ export default function WebControllerClient({ user }: { user: any }) {
             </Card>
           </div> */}
 
-          <Card className="relative p-6">
+          <Card className="relative p-6 h-full">
             <CardHeader className="text-center text-lg">
               <CardTitle>Send a new Blast</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <Carousel className="h-[700px]" setApi={setCarouselApi}>
+            <CardContent className="p-0 pb-6 h-full">
+              <Carousel className="h-full" setApi={setCarouselApi}>
                 <CarouselContent>
                   <CarouselItem>
                     <ContactsStep user={user} />
