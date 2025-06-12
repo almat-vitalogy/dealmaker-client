@@ -14,9 +14,12 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
-  Play,
-  Square,
   QrCode,
+  Tag,
+  SearchCheck,
+  Download,
+  Trash2,
+  MinusCircle,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,10 +40,10 @@ interface RecentBlast {
 }
 
 interface RecentActivity {
-  icon: "CheckCircle" | "RefreshCcw" | "XCircle" | "Clock" | "PlusCircle" | "MessageSquare" | "CheckCircle2";
   description: string;
   timestamp: string;
 }
+
 
 interface DashboardData {
   totalContacts: number;
@@ -50,20 +53,47 @@ interface DashboardData {
 }
 
 const iconMap = {
-  CheckCircle: <CheckCircle className="text-green-500 w-4 h-4" />,
-  RefreshCcw: <RefreshCcw className="text-blue-500 w-4 h-4" />,
-  XCircle: <XCircle className="text-red-500 w-4 h-4" />,
-  Clock: <Clock className="text-yellow-500 w-4 h-4" />,
-  PlusCircle: <PlusCircle className="text-purple-500 w-4 h-4" />,
-  MessageSquare: <MessageSquare className="text-indigo-500 w-4 h-4" />,
-  CheckCircle2: <CheckCircle2 className="text-teal-500 w-4 h-4" />,
-  Trash2: <XCircle className="text-red-500 w-4 h-4" />, // Assuming trash2 is a typo for XCircle
-  MessageCircle: <MessageSquare className="text-indigo-500 w-4 h-4" />, // Assuming MessageCircle is similar to MessageSquare
+  CheckCircle: <CheckCircle className="text-green-500 w-5 h-5" />,
+  CheckCircle2: <CheckCircle2 className="text-green-500 w-5 h-5" />,
+  Download: <Download className="text-green-500 w-5 h-5" />,
+  Tag: <Tag className="text-green-500 w-5 h-5" />,
+  PlusCircle: <PlusCircle className="text-green-500 w-5 h-5" />,
+  SearchCheck: <SearchCheck className="text-green-500 w-5 h-5" />,
+
+  MessageSquare: <MessageSquare className="text-blue-500 w-5 h-5" />,
+
+  RefreshCcw: <RefreshCcw className="text-purple-500 w-5 h-5" />,
+
+  XCircle: <XCircle className="text-red-500 w-5 h-5" />,
+  Trash2: <Trash2 className="text-red-500 w-5 h-5" />,
+  MinusCircle: <MinusCircle className="text-red-500 w-5 h-5" />,
 };
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toISOString().replace("T", ", ").substring(0, 17); // "2025-05-28, 10:16"
+};
+
+const mapActionToIcon = (action: string) => {
+  const lower = action.toLowerCase();
+
+  if (lower.includes("contacts imported successfully")) return iconMap.Download;
+  if (lower.includes("contacts scraped & saved")) return iconMap.SearchCheck;
+  if (lower.includes("contact added")) return iconMap.PlusCircle;
+  if (lower.includes("contact deleted")) return iconMap.XCircle;
+  if (lower.includes("mass-assigned label")) return iconMap.Tag;
+  if (lower.includes("mass-deassigned label")) return iconMap.MinusCircle;
+  if (lower.includes("contacts deleted")) return iconMap.Trash2;
+  if (lower.includes("blast created")) return iconMap.MessageSquare;
+  if (lower.includes("blast sent")) return iconMap.CheckCircle;
+  if (lower.includes("session connected")) return iconMap.RefreshCcw;
+  if (lower.includes("session disconnected")) return iconMap.XCircle;
+  if (lower.includes("message composed")) return iconMap.MessageSquare;
+  if (lower.includes("error")) return iconMap.XCircle;
+  if (lower.includes("label deleted")) return iconMap.Trash2;
+  if (lower.includes("label")) return iconMap.PlusCircle;
+
+  return iconMap.CheckCircle2;
 };
 
 export default function DashboardClient({ user }: { user: any }) {
@@ -126,7 +156,7 @@ export default function DashboardClient({ user }: { user: any }) {
                   <CardHeader>
                     <CardTitle className="flex items-center justify-center">
                       <button
-                        className={`    
+                        className={`
                               font-medium rounded-lg p-2 cursor-pointer flex items-center justify-center gap-6 w-48
                               ${connectionStatus === "Disconnect" ? "bg-green-200" : ""}
                               ${connectionStatus === "Loading..." ? "bg-amber-200 opacity-50 cursor-not-allowed pointer-events-none" : ""}
@@ -356,13 +386,19 @@ export default function DashboardClient({ user }: { user: any }) {
                     </Button>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {dashboardData?.recentActivity.map((activity, i) => (
-                      <div key={i} className="flex items-center space-x-2">
-                        {iconMap[activity.icon]}
-                        <span>{activity.description}</span>
-                        <span className="ml-auto text-xs text-muted-foreground">{formatDate(activity.timestamp)}</span>
-                      </div>
-                    ))}
+                    {dashboardData?.recentActivity.length ? (
+                      dashboardData.recentActivity.map((activity, idx) => (
+                        <div key={idx} className="flex items-center gap-4 text-sm text-gray-700">
+                          <div>{mapActionToIcon(activity.description)}</div>
+                          <div className="flex-1">
+                            <div>{activity.description}</div>
+                            <div className="text-xs text-gray-400">{formatDate(activity.timestamp)}</div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500">No recent activity.</p>
+                    )}
                   </CardContent>
                 </Card>
               </div>

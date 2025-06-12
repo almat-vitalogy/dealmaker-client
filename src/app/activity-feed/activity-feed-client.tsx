@@ -2,7 +2,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { CheckCircle, CheckCircle2, MessageSquare, PlusCircle, RefreshCcw, XCircle, Download, SearchCheck, Tag, Trash2, MinusCircle } from "lucide-react";
+import { CheckCircle, CheckCircle2, MessageSquare, PlusCircle, RefreshCcw, XCircle, Download, SearchCheck, Tag, Trash2, MinusCircle, Plus } from "lucide-react";
 import axios from "axios";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,18 +16,23 @@ interface ActivityItem {
 }
 
 const iconMap: Record<string, JSX.Element> = {
-  CheckCircle: <CheckCircle className="text-green-500 w-5 h-5" />,
-  CheckCircle2: <CheckCircle2 className="text-teal-500 w-5 h-5" />,
-  MessageSquare: <MessageSquare className="text-indigo-500 w-5 h-5" />,
-  PlusCircle: <PlusCircle className="text-purple-500 w-5 h-5" />,
-  RefreshCcw: <RefreshCcw className="text-blue-500 w-5 h-5" />,
-  XCircle: <XCircle className="text-red-500 w-5 h-5" />,
-  trash2: <XCircle className="text-red-500 w-5 h-5" />, // Assuming trash2 is a typo for XCircle
-  Download: <Download className="text-green-500 w-5 h-5" />,
-  SearchCheck: <SearchCheck className="text-teal-500 w-5 h-5" />,
-  Trash2: <Trash2 className="text-red-500 w-5 h-5" />, // for mass delete
-  Tag: <Tag className="text-green-500 w-5 h-5" />, //for mass label assign
-  TagRemove: <MinusCircle className="text-red-500 w-5 h-5" />, // for mass label deassign
+  CheckCircle: <CheckCircle className="text-green-500 w-5 h-5" />,          // success
+  CheckCircle2: <CheckCircle2 className="text-green-500 w-5 h-5" />,        // also success
+  Download: <Download className="text-green-500 w-5 h-5" />,                // completed download
+  Tag: <Tag className="text-green-500 w-5 h-5" />,                          // tag assign
+  PlusCircle: <PlusCircle className="text-green-500 w-5 h-5" />,            // label created & contact added
+  SearchCheck: <SearchCheck className="text-green-500 w-5 h-5" />,           // scraped & saved
+
+  MessageSquare: <MessageSquare className="text-blue-500 w-5 h-5" />,       // communication
+
+  RefreshCcw: <RefreshCcw className="text-purple-500 w-5 h-5" />,           // reload/refresh
+
+  XCircle: <XCircle className="text-red-500 w-5 h-5" />,                    // error/failure
+  trash2: <XCircle className="text-red-500 w-5 h-5" />,                     // redundant, same as above
+  Trash2: <Trash2 className="text-red-500 w-5 h-5" />,                      // destructive
+  TagRemove: <MinusCircle className="text-red-500 w-5 h-5" />,             // tag remove
+  LabelDeleted: <Trash2 className="text-red-500 w-5 h-5" />,               // label deleted
+
 };
 
 const formatDate = (dateString: string) => {
@@ -76,6 +81,8 @@ export default function ActivityFeedClient({ user }: { user: any }) {
       { key: "session disconnected", icon: "XCircle" },
       { key: "message composed", icon: "MessageSquare" },
       { key: "error", icon: "XCircle" },
+      { key: "label deleted", icon: "LabelDeleted" },
+      { key: "label", icon: "PlusCircle" },
     ];
 
     const match = iconMapping.find(({ key }) => action.startsWith(key));

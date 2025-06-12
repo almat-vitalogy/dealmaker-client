@@ -296,7 +296,7 @@ export const useBlastStore = create<BlastState>()(
             return { labels, contacts };
           });
 
-          await get().logActivity(userEmail, "label toggled");
+          // await get().logActivity(userEmail, "label toggled");
         } catch (err) {
           console.error("❌ toggleLabel:", err);
         }
@@ -440,6 +440,7 @@ export const useBlastStore = create<BlastState>()(
 
           set({ contactStatus: "success" });
           await get().logActivity(userEmail, `contacts scraped & saved - ${phoneNumbers.length}`);
+          toast.success(`${phoneNumbers.length} contact${phoneNumbers.length > 1 ? "s have" : " has"} been scraped and saved!`);
         } catch (error) {
           console.error("❌ scrapeContacts error:", error);
           set({ contactStatus: "error" });

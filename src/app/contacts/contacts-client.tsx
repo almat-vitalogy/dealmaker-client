@@ -358,6 +358,7 @@ export default function ContactsClient({ user }: { user: any }) {
         `Successfully imported ${successCount} contacts${errorCount > 0 ? ` (${errorCount} failed)` : ""}`
       );
       await logActivity(userEmail2, `contacts imported successfully - ${successCount}`);
+      toast.success(`Successfully imported ${successCount} contacts${errorCount > 0 ? ` (${errorCount} failed)` : ""}`);
       setVcfFile(null);
 
       // Clear the file input
