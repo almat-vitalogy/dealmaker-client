@@ -7,7 +7,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { CheckCircle, Loader2, Send, XCircle, Upload, FileText, Search, Badge, Trash2 } from "lucide-react";
+import { CheckCircle, Loader2, Send, XCircle, Upload, FileText, Search, Badge, Trash2, Download } from "lucide-react";
 import { useBlastStore } from "@/store/blast";
 import LabelSelect from "@/components/label-select";
 import {
@@ -187,6 +187,7 @@ export default function ContactsClient({ user }: { user: any }) {
     selectedContacts,
     scrapeContacts,
     contactStatus,
+    groupContactStatus,
     setContacts,
     addContactToDB,
     logActivity,
@@ -197,6 +198,7 @@ export default function ContactsClient({ user }: { user: any }) {
     labels,
     labelStatus,
     activeLabel,
+    crawlGroup,
   } = useBlastStore();
 
   const [name, setName] = useState("");
@@ -205,6 +207,8 @@ export default function ContactsClient({ user }: { user: any }) {
   const [importStatus, setImportStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [importMessage, setImportMessage] = useState("");
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
+  const [groupName, setGroupName] = useState("");
+
   const confirm = useConfirmDialog();
 
   useEffect(() => {
@@ -487,6 +491,35 @@ export default function ContactsClient({ user }: { user: any }) {
                   : "Scrape contacts from WhatsApp (connect first)"}
               </Button>
             </CardContent>
+            <CardContent className="-mt-2">
+              <div className="flex items-center gap-4">
+                <Input
+                  placeholder={ groupContactStatus === "success" || groupContactStatus === "error" || groupContactStatus === "" ? "Enter group name" : groupName }
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={() => {
+                    crawlGroup(groupName.trim(), userEmail2);
+                    setGroupName("");
+                  }}
+                  disabled={!groupName.trim() || qrCodeUrl === ""}
+                  className="w-[150px] w-max-[150px] flex justify-between items-center"
+                >
+                  <div className="flex items-center">
+                    {!groupContactStatus && <Download className="mr-2" size={16} />}
+                    {groupContactStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
+                    {groupContactStatus === "success" && <CheckCircle className="mr-2" size={16} />}
+                    {groupContactStatus === "error" && <XCircle className="mr-2" size={16} />}
+                  </div>
+                  <div className="text-right">
+                    {groupContactStatus === "loading" ? "Scraping..." : contactStatus === "success" ? "Scraped" : "Scrape Group"}
+                  </div>
+                </Button>
+              </div>
+            </CardContent>
+
 
             <CardHeader>
               <CardTitle>Import Contacts from VCF File</CardTitle>
@@ -504,13 +537,17 @@ export default function ContactsClient({ user }: { user: any }) {
                   <Button
                     onClick={handleVcfImport}
                     disabled={!vcfFile || importStatus === "loading"}
-                    className="min-w-fit"
+                    className="w-max-[150px] w-[150px] flex justify-between items-center"
                   >
-                    {importStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
-                    {importStatus === "success" && <CheckCircle className="mr-2" size={16} />}
-                    {importStatus === "error" && <XCircle className="mr-2" size={16} />}
-                    {importStatus === "idle" && <Upload className="mr-2" size={16} />}
-                    {importStatus === "loading" ? "Importing..." : "Import VCF"}
+                    <div className="flex items-center">
+                      {importStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
+                      {importStatus === "success" && <CheckCircle className="mr-2" size={16} />}
+                      {importStatus === "error" && <XCircle className="mr-2" size={16} />}
+                      {importStatus === "idle" && <Upload className="mr-2" size={16} />}
+                    </div>
+                    <div className="text-right">
+                      {importStatus === "loading" ? "Importing..." : "Import VCF"}
+                    </div>
                   </Button>
                 </div>
 
