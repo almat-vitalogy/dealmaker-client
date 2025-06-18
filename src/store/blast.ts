@@ -484,7 +484,7 @@ export const useBlastStore = create<BlastState>()(
 
             await logActivity(
               userEmail,
-              `Group "${groupName}" scraped. ${data.contacts.length} new contact(s) added.`
+              `contacts scraped & saved from group: "${groupName}" - ${data.contacts.length}`
             );
 
             toast.success(`${data.contacts.length} contact${data.contacts.length !== 1 ? "s" : ""} saved from "${groupName}"`);
