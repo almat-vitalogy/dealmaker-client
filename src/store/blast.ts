@@ -28,6 +28,7 @@ interface BlastState {
   connectionStatus: "Connect" | "Loading..." | "Disconnect";
   messageStatus: "success" | "loading" | "error" | "";
   contactStatus: "success" | "loading" | "error" | "";
+  groupContactStatus: "success" | "loading" | "error" | "";
   composeMessageStatus: "success" | "loading" | "error" | "";
   title: string;
   userEmail: string;
@@ -47,6 +48,7 @@ interface BlastState {
   setUserEmail: (userEmail: string) => void;
   setTitle: (title: string) => void;
   setContactStatus: (status: "success" | "loading" | "error" | "") => void;
+  setGroupContactStatus: (status: "success" | "loading" | "error" | "") => void;
   setContacts: (contacts: Contact[]) => void;
   selectContact: (phone: string) => void;
   setMessage: (message: string) => void;
@@ -57,6 +59,7 @@ interface BlastState {
   logActivity: (userEmail: string, action: string) => Promise<void>;
   sendMessage: (userEmail: string) => Promise<boolean | undefined>;
   scrapeContacts: (userEmail: string) => Promise<void>;
+  crawlGroup: (groupName: string, userEmail2: string) => Promise<void>;
   composeMessage: (goal: string, userEmail: string) => Promise<void>;
   clearStorage: () => void;
   addContactToDB: (agentPhone: string, name: string, phone: string, userEmail2: string, massAction: boolean) => Promise<void>;
@@ -74,6 +77,7 @@ export const useBlastStore = create<BlastState>()(
       connectionStatus: "Connect",
       messageStatus: "",
       contactStatus: "",
+      groupContactStatus: "",
       composeMessageStatus: "",
       title: "",
       userEmail: "",
@@ -161,6 +165,7 @@ export const useBlastStore = create<BlastState>()(
       },
       setTitle: (title) => set({ title }),
       setContactStatus: (status) => set({ contactStatus: status }),
+      setGroupContactStatus: (groupStatus) => set({ groupContactStatus: groupStatus }),
       setContacts: (contacts) => set({ contacts }),
 
       selectContact: (phone) =>
@@ -426,26 +431,69 @@ export const useBlastStore = create<BlastState>()(
           console.warn("❗ Cannot scrape contacts — no userId");
           return;
         }
+
         set({ contactStatus: "loading" });
         try {
-          const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scrape-contacts`, { userId });
+          const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scrape-contacts`, {
+            userId,
+            userEmail,
+          });
 
-          const phoneNumbers: string[] = data.phoneNumbers || [];
+          if (data.success) {
+            set((state) => ({
+              contacts: [...state.contacts, data.contacts],
+            }));
 
-          for (const phone of new Set(phoneNumbers)) {
-            if (!get().contacts.some((c) => c.phone === phone)) {
-              await get().addContactToDB(userEmail, phone, phone, userEmail, true);
-            }
+            // localStorage.setItem("blastStorage", JSON.stringify(scrapedContacts)); // or append to existing if needed
+
+            set({ contactStatus: "success" });
+            await get().logActivity(userEmail, `contacts scraped & saved - ${data.contacts.length}`);
+            toast.success(`${data.contacts.length} contact${data.contacts.length > 1 ? "s have" : " has"} been scraped and saved!`);
           }
-
-          set({ contactStatus: "success" });
-          await get().logActivity(userEmail, `contacts scraped & saved - ${phoneNumbers.length}`);
-          toast.success(`${phoneNumbers.length} contact${phoneNumbers.length > 1 ? "s have" : " has"} been scraped and saved!`);
         } catch (error) {
           console.error("❌ scrapeContacts error:", error);
           set({ contactStatus: "error" });
         } finally {
           setTimeout(() => set({ contactStatus: "" }), 15_000);
+        }
+      },
+
+      crawlGroup: async (groupName, userEmail2) => {
+        const { userId, userEmail, logActivity } = get();
+
+        if (!userId || !userEmail2 || !groupName) {
+          console.warn("❗crawlGroup: Missing userId, groupName, or userEmail2");
+          return;
+        }
+
+        set({ groupContactStatus: "loading" });
+        try {
+          const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scrape-groups`, {
+            userId,
+            groupName,
+            userEmail: userEmail2,
+          });
+
+          if (data.success) {
+            // Flatten and merge the contacts list
+            set((state) => ({
+              contacts: [...state.contacts, ...data.contacts],
+            }));
+
+            set({ groupContactStatus: "success" });
+
+            await logActivity(
+              userEmail,
+              `contacts scraped & saved from group: "${groupName}" - ${data.contacts.length}`
+            );
+
+            toast.success(`${data.contacts.length} contact${data.contacts.length !== 1 ? "s" : ""} saved from "${groupName}"`);
+          }
+        } catch (error) {
+            console.error("❌ crawlGroup error:", error);
+            toast.error(`Failed to crawl group "${groupName}"`);
+        } finally {
+          setTimeout(() => set({ groupContactStatus: "" }), 5000);
         }
       },
 
