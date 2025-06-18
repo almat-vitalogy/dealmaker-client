@@ -431,21 +431,25 @@ export const useBlastStore = create<BlastState>()(
           console.warn("❗ Cannot scrape contacts — no userId");
           return;
         }
+
         set({ contactStatus: "loading" });
         try {
-          const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scrape-contacts`, { userId });
+          const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scrape-contacts`, {
+            userId,
+            userEmail,
+          });
 
-          const phoneNumbers: string[] = data.phoneNumbers || [];
+          if (data.success) {
+            set((state) => ({
+              contacts: [...state.contacts, data.contacts],
+            }));
 
-          for (const phone of new Set(phoneNumbers)) {
-            if (!get().contacts.some((c) => c.phone === phone)) {
-              await get().addContactToDB(userEmail, phone, phone, userEmail, true);
-            }
+            // localStorage.setItem("blastStorage", JSON.stringify(scrapedContacts)); // or append to existing if needed
+
+            set({ contactStatus: "success" });
+            await get().logActivity(userEmail, `contacts scraped & saved - ${data.contacts.length}`);
+            toast.success(`${data.contacts.length} contact${data.contacts.length > 1 ? "s have" : " has"} been scraped and saved!`);
           }
-
-          set({ contactStatus: "success" });
-          await get().logActivity(userEmail, `contacts scraped & saved - ${phoneNumbers.length}`);
-          toast.success(`${phoneNumbers.length} contact${phoneNumbers.length > 1 ? "s have" : " has"} been scraped and saved!`);
         } catch (error) {
           console.error("❌ scrapeContacts error:", error);
           set({ contactStatus: "error" });
@@ -455,36 +459,39 @@ export const useBlastStore = create<BlastState>()(
       },
 
       crawlGroup: async (groupName, userEmail2) => {
-        const { userId, userEmail } = get();
+        const { userId, userEmail, logActivity } = get();
 
         if (!userId || !userEmail2 || !groupName) {
-          console.warn("❗ logActivity: Missing required data to crawl group");
+          console.warn("❗crawlGroup: Missing userId, groupName, or userEmail2");
           return;
         }
 
         set({ groupContactStatus: "loading" });
         try {
-          const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/crawl-group`, {
+          const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scrape-groups`, {
             userId,
-            userEmail2,
             groupName,
+            userEmail: userEmail2,
           });
 
-          const phoneNumbers: string[] = response.data.phoneNumbers || [];
+          if (data.success) {
+            // Flatten and merge the contacts list
+            set((state) => ({
+              contacts: [...state.contacts, ...data.contacts],
+            }));
 
-          for (const phone of new Set(phoneNumbers)) {
-            if (!get().contacts.some((c) => c.phone === phone)) {
-              await get().addContactToDB(userEmail, phone, phone, userEmail, true);
-            }
+            set({ groupContactStatus: "success" });
+
+            await logActivity(
+              userEmail,
+              `Group "${groupName}" scraped. ${data.contacts.length} new contact(s) added.`
+            );
+
+            toast.success(`${data.contacts.length} contact${data.contacts.length !== 1 ? "s" : ""} saved from "${groupName}"`);
           }
-
-          set({ groupContactStatus: "success" });
-          await get().logActivity(userEmail, `contacts scraped & saved from group ${groupName} - ${phoneNumbers.length}`);
-          toast.success(`Group "${groupName}" crawled successfully`);
-        } catch (error: any) {
-          console.error("❌ crawlGroup:", error);
-          set({ groupContactStatus: "error" });
-          toast.error("Failed to crawl group");
+        } catch (error) {
+            console.error("❌ crawlGroup error:", error);
+            toast.error(`Failed to crawl group "${groupName}"`);
         } finally {
           setTimeout(() => set({ groupContactStatus: "" }), 5000);
         }

@@ -230,7 +230,8 @@ export default function ContactsClient({ user }: { user: any }) {
         (contact.phone && contact.phone.toLowerCase().includes(q)) ||
         assignedLabels.some((label) => label.name && label.name.toLowerCase().includes(q));
 
-      const matchesLabel = !activeLabel || contact.labels.includes(activeLabel);
+      // const matchesLabel = !activeLabel || contact.labels.includes(activeLabel);
+      const matchesLabel = !activeLabel || contact.labels?.includes(activeLabel);
 
       return matchesSearch && matchesLabel;
     });
