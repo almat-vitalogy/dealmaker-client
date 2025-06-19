@@ -32,10 +32,12 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
     setContacts,
     addContactToDB,
     deleteContactFromDB,
+    overlayVisible,
     labels,
     activeLabel,
     toggleLabel,
     logActivity,
+    massDeleteContacts
   } = useBlastStore();
   const confirm = useConfirmDialog();
 
@@ -99,23 +101,25 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
     }
 
     const confirmed = await confirm({
-        title: `Delete ${selectedContacts.length} contact${selectedContacts.length > 1 ? "s" : ""}?`,
-        description: "This action cannot be undone.",
-      });
-      
+      title: `Delete ${selectedContacts.length} contact${selectedContacts.length > 1 ? "s" : ""}?`,
+      description: "This action cannot be undone.",
+    });
 
-    if (confirmed) {
-      try {
-        selectedContacts.forEach((phone) => {
-          selectContact(phone);
-          deleteContactFromDB(userEmail, phone, userEmail2, true);
-        });
-        await logActivity(userEmail2, `contacts deleted successfully - ${selectedContacts.length}`);
-        toast.success(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
-      } catch (error) {
-        console.error("Error deleting selected contacts:", error);
-        toast.error("Failed to delete some contacts. Please try again.");
-      }
+    if (!confirmed) return;
+
+    try {
+      // Optimistically unselect contacts in UI (optional)
+      selectedContacts.forEach((phone) => selectContact(phone));
+
+      // Use your new bulk delete method
+      await massDeleteContacts(userEmail2, selectedContacts);
+
+      // Log + Toast
+      await logActivity(userEmail2, `contacts deleted  - ${selectedContacts.length}`);
+      toast.success(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
+    } catch (error) {
+      console.error("❌ Error deleting selected contacts:", error);
+      toast.error("Failed to delete some contacts. Please try again.");
     }
   };
 
@@ -170,7 +174,7 @@ const ContactsStep = ({ user }: ContactsStepProps) => {
             <Button
               variant="outline"
               onClick={handleDeleteSelected}
-              disabled={!selectedContacts.length}
+              disabled={!selectedContacts.length || overlayVisible === true}
               className="h-full"
             >
               <Trash2 className="mr-2 h-4 w-4" />

@@ -29,6 +29,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useClearLoadingOnRouteChange } from "@/hooks/useClearLoadingOnRouteChange";
 import { useBlastStore } from "@/store/blast";
+import { toast } from "sonner";
 
 interface RecentBlast {
   title: string;
@@ -98,8 +99,9 @@ const mapActionToIcon = (action: string) => {
 
 export default function DashboardClient({ user }: { user: any }) {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [checkingConnection, setCheckingConnection] = useState(false);
-  const [connectionChecked, setConnectionChecked] = useState(false);
+  // const [checkingConnection, setCheckingConnection] = useState(false);
+  // const [connectionChecked, setConnectionChecked] = useState(false);
+  const [checkState, setCheckState] = useState("idle");
   const { connectUser, qrCodeUrl, disconnectUser, connectionStatus, userId, setUserEmail } = useBlastStore();
   const userEmail = user?.email || "";
 
@@ -120,19 +122,36 @@ export default function DashboardClient({ user }: { user: any }) {
   }, [userEmail]);
 
   const handleCheckConnection = async () => {
-    setCheckingConnection(true);
-    setConnectionChecked(false);
+    setCheckState("checking");
     try {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/check-connection`, { userId });
-      if (response.status === 200) {
-        setConnectionChecked(true);
-      }
+      setCheckState(response.status === 200 ? "connected" : "error");
+      toast.success("Successfully Connected!");
     } catch (error) {
       console.error("Connection check failed:", error);
-    } finally {
-      setCheckingConnection(false);
+      toast.error("Failed. Please try again.");
+      setCheckState("idle");
     }
   };
+
+  // const handleCheckConnection = async () => {
+  //   setCheckingConnection(true);
+  //   setConnectionChecked(false);
+  //   try {
+  //     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/check-connection`, { userId });
+  //     if (response.status === 200) {
+  //       setConnectionChecked(true);
+  //       setTimeout(() => setCheckingConnection(false), 10000);
+  //     }
+  //   } catch (error) {
+  //     console.error("Connection check failed:", error);
+  //     toast.error("Failed. Please try again.");
+  //     setConnectionChecked(false);
+  //     setCheckingConnection(false);
+  //   } finally {
+  //     setCheckingConnection(false);
+  //   }
+  // };
 
   useClearLoadingOnRouteChange();
 
@@ -294,18 +313,18 @@ export default function DashboardClient({ user }: { user: any }) {
 
                     <Button
                       onClick={handleCheckConnection}
-                      disabled={checkingConnection}
+                      disabled={checkState === "checking"}
                       className="w-48"
                       variant="outline"
                     >
-                      {checkingConnection ? (
+                      {checkState === "checking" ? (
                         <>
                           Checking... <Loader2 className="animate-spin ml-2 h-4 w-4" />
                         </>
                       ) : (
                         <>
                           Check Connection
-                          {connectionChecked && <CheckCircle className="text-green-500 ml-2 h-4 w-4" />}
+                          {checkState === "connected" && <CheckCircle className="text-green-500 ml-2 h-4 w-4" />}
                         </>
                       )}
                     </Button>

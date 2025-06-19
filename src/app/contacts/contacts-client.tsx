@@ -21,6 +21,7 @@ import {
 import { Checkbox } from "@radix-ui/react-checkbox";
 import {toast} from "sonner";
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
+import axios from "axios";
 
 // VCF Parser Classes
 class VCFParser {
@@ -192,6 +193,7 @@ export default function ContactsClient({ user }: { user: any }) {
     addContactToDB,
     logActivity,
     deleteContactFromDB,
+    overlayVisible,
     qrCodeUrl,
     toggleLabel,
     getLabels,
@@ -199,6 +201,8 @@ export default function ContactsClient({ user }: { user: any }) {
     labelStatus,
     activeLabel,
     crawlGroup,
+    massDeleteContacts,
+    setActiveLabel,
   } = useBlastStore();
 
   const [name, setName] = useState("");
@@ -235,9 +239,8 @@ export default function ContactsClient({ user }: { user: any }) {
 
       return matchesSearch && matchesLabel;
     });
-
     setFilteredContacts(filtered);
-  }, [contacts, searchTerm, addContactToDB, activeLabel, labels]);
+  }, [contacts, searchTerm, activeLabel, labels]);
 
   useEffect(() => {
     if (!userEmail) return;
@@ -301,76 +304,57 @@ export default function ContactsClient({ user }: { user: any }) {
         throw new Error("No valid contacts found in the file");
       }
 
-      let successCount = 0;
-      let errorCount = 0;
+      const contactPayload = [];
 
-      // Process each contact
       for (const contact of parsedContacts) {
-        if (!contact || typeof contact !== "object") {
-          errorCount++;
-          continue;
-        }
-
         const phones = Array.isArray(contact.phones) ? contact.phones : [];
 
-        if (phones.length === 0) {
-          console.warn(`Contact ${contact.name || "Unknown"} has no phone numbers, skipping`);
-          errorCount++;
-          continue;
-        }
-
-        // Handle multiple phone numbers per contact
         for (const phone of phones) {
-          if (!phone || !phone.number || typeof phone.number !== "string") {
-            errorCount++;
-            continue;
-          }
+          if (!phone || !phone.number || typeof phone.number !== "string") continue;
 
-          try {
-            const phoneNumber = phone.number.trim();
-            if (phoneNumber.length === 0) {
-              errorCount++;
-              continue;
-            }
+          const phoneNumber = phone.number.trim();
+          if (!phoneNumber) continue;
 
-            const formattedPhone = VCFParser.formatForWhatsApp(phoneNumber, "+1");
-            if (!formattedPhone || formattedPhone.length === 0) {
-              errorCount++;
-              continue;
-            }
+          const formattedPhone = VCFParser.formatForWhatsApp(phoneNumber, "+1");
+          if (!formattedPhone) continue;
 
-            const contactName =
-              contact.name && typeof contact.name === "string" && contact.name.trim()
-                ? contact.name.trim()
-                : `Contact ${formattedPhone}`;
+          const contactName =
+            contact.name && typeof contact.name === "string" && contact.name.trim()
+              ? contact.name.trim()
+              : `Contact ${formattedPhone}`;
 
-            // Add to database using your existing function
-            await addContactToDB(userEmail, contactName, formattedPhone, userEmail2, true);
-            successCount++;
-          } catch (error) {
-            console.error(`Error adding contact ${contact.name || "Unknown"}:`, error);
-            errorCount++;
-          }
+          contactPayload.push({
+            name: contactName,
+            phone: formattedPhone,
+          });
         }
       }
 
-      if (successCount === 0) {
-        throw new Error("No contacts could be imported. Please check the file format.");
+      if (contactPayload.length === 0) {
+        throw new Error("No valid contacts could be extracted from the file.");
       }
 
-      setImportStatus("success");
-      setImportMessage(
-        `Successfully imported ${successCount} contacts${errorCount > 0 ? ` (${errorCount} failed)` : ""}`
-      );
-      await logActivity(userEmail2, `contacts imported successfully - ${successCount}`);
-      toast.success(`Successfully imported ${successCount} contacts${errorCount > 0 ? ` (${errorCount} failed)` : ""}`);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/mass-add/${userEmail}`, {
+        contacts: contactPayload,
+      });
+
+      if (res.data.insertedCount !== 0){ 
+        setContacts([...contacts, ...res.data.contacts]);
+      
+        setImportStatus("success");
+        // setImportMessage(`Successfully imported ${res.data.insertedCount} contacts`);
+        await logActivity(userEmail2, `contacts imported successfully - ${res.data.insertedCount}`);
+        toast.success(`Successfully imported ${res.data.insertedCount} contacts`);
+        
+      } else {
+        setImportStatus("success");
+        toast.info("No new contacts found");
+      }
       setVcfFile(null);
 
-      // Clear the file input
       const fileInput = document.getElementById("vcf-file-input") as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = "";
-      }
+      if (fileInput) fileInput.value = "";
+
     } catch (error) {
       console.error("VCF import error:", error);
       setImportStatus("error");
@@ -414,20 +398,24 @@ export default function ContactsClient({ user }: { user: any }) {
       description: "This action cannot be undone.",
     });
 
-    if (confirmed) {
-      try {
-        selectedContacts.forEach((phone) => {
-          selectContact(phone);
-          deleteContactFromDB(userEmail, phone, userEmail2,true);
-        });
-        await logActivity(userEmail2, `contacts deleted successfully - ${selectedContacts.length}`);
-        toast.success(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
-      } catch (error) {
-        console.error("Error deleting selected contacts:", error);
-        toast.error("Failed to delete some contacts. Please try again.");
-      }
+    if (!confirmed) return;
+
+    try {
+      // Optimistically unselect contacts in UI (optional)
+      selectedContacts.forEach((phone) => selectContact(phone));
+
+      // Use your new bulk delete method
+      await massDeleteContacts(userEmail2, selectedContacts);
+
+      // Log + Toast
+      await logActivity(userEmail2, `contacts deleted  - ${selectedContacts.length}`);
+      toast.success(`${selectedContacts.length} contact${selectedContacts.length > 1 ? "s have" : " has"} been deleted!`);
+    } catch (error) {
+      console.error("❌ Error deleting selected contacts:", error);
+      toast.error("Failed. Please try again.");
     }
   };
+
 
   const areAllSelected = useMemo(() => {
     return (
@@ -480,8 +468,8 @@ export default function ContactsClient({ user }: { user: any }) {
               <CardTitle>Scrape Contacts</CardTitle>
             </CardHeader>
             <CardContent className="-mt-5">
-              <Button className="w-full" onClick={() => scrapeContacts(userEmail2)} disabled={qrCodeUrl === ""}>
-                {!contactStatus && <Send className="mr-2" size={16} />}
+              <Button className="w-full" onClick={() => scrapeContacts(userEmail2)} disabled={qrCodeUrl === "" || contactStatus === "loading" || overlayVisible == true}>
+                {/* {!contactStatus && <Send className="mr-2" size={16} />}
                 {contactStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
                 {contactStatus === "success" && <CheckCircle className="mr-2" size={16} />}
                 {contactStatus === "error" && <XCircle className="mr-2" size={16} />}
@@ -489,7 +477,9 @@ export default function ContactsClient({ user }: { user: any }) {
                   ? "Scraping..."
                   : contactStatus === "success"
                   ? "Scraped"
-                  : "Scrape contacts from WhatsApp (connect first)"}
+                  : "Scrape contacts from WhatsApp (connect first)"} */}
+                  <Send className="mr-2" size={16} />
+                  {"Scrape contacts from WhatsApp (connect first)"}
               </Button>
             </CardContent>
             <CardContent className="-mt-2">
@@ -505,17 +495,21 @@ export default function ContactsClient({ user }: { user: any }) {
                     crawlGroup(groupName.trim(), userEmail2);
                     setGroupName("");
                   }}
-                  disabled={!groupName.trim() || qrCodeUrl === ""}
+                  disabled={!groupName.trim() || qrCodeUrl === "" || groupContactStatus === "loading" || overlayVisible == true}
                   className="w-[150px] w-max-[150px] flex justify-between items-center"
                 >
                   <div className="flex items-center">
-                    {!groupContactStatus && <Download className="mr-2" size={16} />}
+                    {/* {!groupContactStatus && <Download className="mr-2" size={16} />}
                     {groupContactStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
                     {groupContactStatus === "success" && <CheckCircle className="mr-2" size={16} />}
                     {groupContactStatus === "error" && <XCircle className="mr-2" size={16} />}
                   </div>
                   <div className="text-right">
-                    {groupContactStatus === "loading" ? "Scraping..." : contactStatus === "success" ? "Scraped" : "Scrape Group"}
+                    {groupContactStatus === "loading" ? "Scraping..." : contactStatus === "success" ? "Scraped" : "Scrape Group"} */}
+                    <Download className="mr-2" size={16} />
+                  </div>
+                  <div className="text-right">
+                    {"Scrape Group"}
                   </div>
                 </Button>
               </div>
@@ -541,13 +535,15 @@ export default function ContactsClient({ user }: { user: any }) {
                     className="w-max-[150px] w-[150px] flex justify-between items-center"
                   >
                     <div className="flex items-center">
-                      {importStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
+                      {/* {importStatus === "loading" && <Loader2 className="mr-2 animate-spin" size={16} />}
                       {importStatus === "success" && <CheckCircle className="mr-2" size={16} />}
                       {importStatus === "error" && <XCircle className="mr-2" size={16} />}
-                      {importStatus === "idle" && <Upload className="mr-2" size={16} />}
+                      {importStatus === "idle" && <Upload className="mr-2" size={16} />} */}
+                      <Upload className="mr-2" size={16} />
                     </div>
                     <div className="text-right">
-                      {importStatus === "loading" ? "Importing..." : "Import VCF"}
+                      {/* {importStatus === "loading" ? "Importing..." : "Import VCF"} */}
+                      {"Import VCF"}
                     </div>
                   </Button>
                 </div>
@@ -559,11 +555,11 @@ export default function ContactsClient({ user }: { user: any }) {
                   </div>
                 )}
 
-                {importMessage && (
+                {/* {importMessage && (
                   <div className={`text-sm ${importStatus === "success" ? "text-green-600" : "text-red-600"}`}>
                     {importMessage}
                   </div>
-                )}
+                )} */}
 
                 <div className="text-xs text-muted-foreground">
                   Supported format: .vcf files exported from iPhone, Android, or other contact apps
@@ -602,7 +598,7 @@ export default function ContactsClient({ user }: { user: any }) {
 
                     try {
                       addContactToDB(userEmail, trimmedName || trimmedPhone, trimmedPhone, userEmail2, false);
-                      toast.success(`${trimmedName || trimmedPhone} has been added successfully!`);
+                      // toast.success(`${trimmedName || trimmedPhone} has been added successfully!`);
                       setName("");
                       setPhone("");
                     } catch (error) {
@@ -634,7 +630,7 @@ export default function ContactsClient({ user }: { user: any }) {
                 <Button
                   variant="outline"
                   onClick={handleDeleteSelected}
-                  disabled={!selectedContacts.length}
+                  disabled={!selectedContacts.length || overlayVisible === true}
                   className="h-full"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -763,6 +759,16 @@ export default function ContactsClient({ user }: { user: any }) {
             </CardContent>
           </Card>
         </div>
+        {(overlayVisible || importStatus === "loading") && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+            <div className="w-[80%] max-w-md">
+              <div className="mb-4 text-white text-sm text-center">Processing, please wait...</div>
+              <div className="h-2 w-full overflow-hidden rounded bg-muted">
+                <div className="h-full w-full animate-progress bg-primary" />
+              </div>
+            </div>
+          </div>
+        )}
       </SidebarInset>
     </SidebarProvider>
   );

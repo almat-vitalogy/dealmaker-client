@@ -25,6 +25,7 @@ interface BlastState {
   message: string;
   userId: string;
   qrCodeUrl: string;
+  overlayVisible: boolean;
   connectionStatus: "Connect" | "Loading..." | "Disconnect";
   messageStatus: "success" | "loading" | "error" | "";
   contactStatus: "success" | "loading" | "error" | "";
@@ -47,6 +48,7 @@ interface BlastState {
   toggleLabel: (contactId: string, labelId: string, userEmail: string) => Promise<void>;
   setUserEmail: (userEmail: string) => void;
   setTitle: (title: string) => void;
+  setOverlayVisible: (visible: boolean) => void;
   setContactStatus: (status: "success" | "loading" | "error" | "") => void;
   setGroupContactStatus: (status: "success" | "loading" | "error" | "") => void;
   setContacts: (contacts: Contact[]) => void;
@@ -64,6 +66,7 @@ interface BlastState {
   clearStorage: () => void;
   addContactToDB: (agentPhone: string, name: string, phone: string, userEmail2: string, massAction: boolean) => Promise<void>;
   deleteContactFromDB: (agentPhone: string, phone: string, userEmail: string, massAction: boolean) => Promise<void>;
+  massDeleteContacts: (userEmail: string, phoneNumbers: string[]) => Promise<void>;
 }
 
 export const useBlastStore = create<BlastState>()(
@@ -84,6 +87,7 @@ export const useBlastStore = create<BlastState>()(
       labels: [],
       labelStatus: "",
       activeLabel: "",
+      overlayVisible: false,
 
       massAssignLabel: async (contactIds, labelName, labelId, userEmail) => {
         if (!Array.isArray(contactIds) || !contactIds.length || !labelId) return;
@@ -116,10 +120,13 @@ export const useBlastStore = create<BlastState>()(
           await get().logActivity(userEmail, `mass-assigned label ${labelName} to ${contactIds.length} contacts`);
         } catch (err) {
           console.error("❌ massAssignLabel:", err);
+          toast.error("Failed. Please try again.");
           /* 3️⃣ rollback */
           set({ contacts: prevContacts, labels: prevLabels });
         }
       },
+
+      
 
       massDeassignLabel: async (contactIds, labelName, labelId, userEmail) => {
         if (!Array.isArray(contactIds) || !contactIds.length || !labelId) return;
@@ -152,6 +159,7 @@ export const useBlastStore = create<BlastState>()(
           await get().logActivity(userEmail, `mass-deassigned label ${labelName} from ${contactIds.length} contacts`);
         } catch (err) {
           console.error("❌ massDeassignLabel:", err);
+          toast.error("Failed to deassign label.");
           /* 3️⃣ rollback */
           set({ contacts: prevContacts, labels: prevLabels });
         }
@@ -181,6 +189,7 @@ export const useBlastStore = create<BlastState>()(
       setMessage: (message) => set({ message }),
       setConnectionStatus: (status) => set({ connectionStatus: status }),
       setMessageStatus: (status) => set({ messageStatus: status }),
+      setOverlayVisible: (visible) => set({ overlayVisible: visible }),
 
       getLabels: async (userEmail) => {
         if (!userEmail) return;
@@ -197,7 +206,6 @@ export const useBlastStore = create<BlastState>()(
           setTimeout(() => set({ labelStatus: "" }), 15000);
         }
       },
-
       createLabel: async (name, color = "#3b82f6", userEmail) => {
         if (!name || !userEmail) return;
         set({ labelStatus: "loading" });
@@ -381,6 +389,7 @@ export const useBlastStore = create<BlastState>()(
           console.log(`📘 Activity logged: ${action} for ${userEmail}`);
         } catch (error) {
           console.error("❌ Error logging activity:", error);
+
         }
       },
 
@@ -421,6 +430,7 @@ export const useBlastStore = create<BlastState>()(
         } catch (error) {
           set({ messageStatus: "error" });
           console.error("❌ sendMessage error:", error);
+          toast.error("Failed. Please try again.");
           return false;
         }
       },
@@ -433,6 +443,7 @@ export const useBlastStore = create<BlastState>()(
         }
 
         set({ contactStatus: "loading" });
+        set({ overlayVisible: true });
         try {
           const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scrape-contacts`, {
             userId,
@@ -440,21 +451,26 @@ export const useBlastStore = create<BlastState>()(
           });
 
           if (data.success) {
+            
             set((state) => ({
-              contacts: [...state.contacts, data.contacts],
+              contacts: [...state.contacts, ...data.contacts],
             }));
-
-            // localStorage.setItem("blastStorage", JSON.stringify(scrapedContacts)); // or append to existing if needed
-
+            
             set({ contactStatus: "success" });
-            await get().logActivity(userEmail, `contacts scraped & saved - ${data.contacts.length}`);
-            toast.success(`${data.contacts.length} contact${data.contacts.length > 1 ? "s have" : " has"} been scraped and saved!`);
+            if(data.contacts.length !== 0) {
+              await get().logActivity(userEmail, `contacts scraped & saved - ${data.contacts.length}`);
+              toast.success(`${data.contacts.length} contact${data.contacts.length > 1 ? "s have" : " has"} been scraped and saved!`);
+            } else {
+              toast.info("No new contacts found.");
+            }
           }
         } catch (error) {
           console.error("❌ scrapeContacts error:", error);
+          toast.error("Failed. Please try again.");
           set({ contactStatus: "error" });
         } finally {
-          setTimeout(() => set({ contactStatus: "" }), 15_000);
+          set({ overlayVisible: false });
+          setTimeout(() => set({ contactStatus: "" }), 5000);
         }
       },
 
@@ -466,6 +482,7 @@ export const useBlastStore = create<BlastState>()(
           return;
         }
 
+        set({ overlayVisible: true });
         set({ groupContactStatus: "loading" });
         try {
           const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scrape-groups`, {
@@ -491,8 +508,9 @@ export const useBlastStore = create<BlastState>()(
           }
         } catch (error) {
             console.error("❌ crawlGroup error:", error);
-            toast.error(`Failed to crawl group "${groupName}"`);
+            toast.error(`Failed. Please try again.`);
         } finally {
+          set({ overlayVisible: false });
           setTimeout(() => set({ groupContactStatus: "" }), 5000);
         }
       },
@@ -521,6 +539,7 @@ export const useBlastStore = create<BlastState>()(
         } catch (error) {
           set({ composeMessageStatus: "error" });
           console.error("❌ composeMessage error:", error);
+          toast.error("Failed. Please try again.");
         }
       },
 
@@ -546,12 +565,18 @@ export const useBlastStore = create<BlastState>()(
             name,
             phone,
           });
-          console.log(response);
-          set((state) => ({ contacts: [...state.contacts, response.data.contact] }));
-          console.log(`✅ ${name || "Unnamed Contact"} (${phone}) has been added successfully!`);
-          if(!massAction) await get().logActivity(userEmail2, "contact added");
+
+          if (!response.data.contact){
+            toast.info("Contact already exists.");
+          } else {
+            set((state) => ({ contacts: [...state.contacts, response.data.contact] }));
+            console.log(`✅ ${name || "Unnamed Contact"} (${phone}) has been added successfully!`);
+            if(!massAction) await get().logActivity(userEmail2, "contact added");
+            toast.success(`${name} has been added successfully!`);
+          }
         } catch (error) {
           console.error("❌ Error adding contact to DB:", error);
+          toast.error("Failed. Please try again.");
         }
       },
 
@@ -603,6 +628,63 @@ export const useBlastStore = create<BlastState>()(
           console.log(`🗑️ Contact (${phone}) has been deleted successfully!`);
         } catch (error) {
           console.error("❌ Error deleting contact from DB:", error);
+          toast.error("Failed to delete contact. Please try again.");
+        }
+      },
+
+      massDeleteContacts: async (userEmail, phoneNumbers) => {
+        if (!Array.isArray(phoneNumbers) || phoneNumbers.length === 0) return;
+        set({ overlayVisible: true });
+        try {
+          // Step 1: Get contacts to be deleted
+          const contactsToDelete = get().contacts.filter((c) => phoneNumbers.includes(c.phone));
+          const contactIds = contactsToDelete.map((c) => c._id);
+          const labelIds = [...new Set(contactsToDelete.flatMap((c) => c.labels))];
+
+          // Step 2: Remove contactIds from associated labels
+          await Promise.all(
+            labelIds.map((labelId) =>
+              axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/labels/mass-deassign-label`, {
+                contactIds,
+                labelId,
+                userEmail,
+              })
+            )
+          );
+
+          // Step 3: Update state (labels and contacts)
+          set((state) => {
+            const labels = state.labels.map((lbl) => {
+              if (!labelIds.includes(lbl._id)) return lbl;
+              return {
+                ...lbl,
+                contactIds: lbl.contactIds.filter((id) => !contactIds.includes(id)),
+              };
+            });
+
+            const contacts = state.contacts.filter((c) => !phoneNumbers.includes(c.phone));
+
+            return { contacts, labels };
+          });
+
+          // Step 4: Call DELETE endpoint with body
+          await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/mass-delete/${userEmail}`, {
+            data: { phoneNumbers }, // important for DELETE requests with body
+          });
+
+          // Step 5: Clean up local state again to ensure sync
+          set((state) => ({
+            contacts: state.contacts.filter((c) => !phoneNumbers.includes(c.phone)),
+          }));
+
+          // Step 6: Log the activity
+          await get().logActivity(userEmail, `contacts deleted successfully - ${phoneNumbers.length}`);
+          console.log(`🗑️ ${phoneNumbers.length} contacts have been deleted successfully!`);
+        } catch (error) {
+          console.error("❌ Error mass deleting contacts:", error);
+          toast.error("Failed. Please try again.");
+        } finally {
+          set({ overlayVisible: false });
         }
       },
     }),
